@@ -55,7 +55,7 @@ function LandingHeader() {
                     <button
                       key={category}
                       className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition-colors"
-                      onClick={() => navigate(`/courses?category=${category.toLowerCase().replace(' ', '-')}`)}
+                      onClick={() => navigate(`/auth`)}
                     >
                       {category}
                     </button>
