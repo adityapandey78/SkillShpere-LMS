@@ -56,8 +56,8 @@ function Footer() {
             <h3 className="text-lg font-semibold">Quick Links</h3>
             <ul className="space-y-3">
               {[
-                { name: "All Courses", path: "/courses" },
-                { name: "Categories", path: "/courses" },
+                { name: "All Courses", path: "/auth" },
+                { name: "Categories", path: "/auth" },
                 { name: "Become an Instructor", path: "/auth" },
                 { name: "Student Success", path: "#" },
                 { name: "Mobile App", path: "#" }

@@ -56,7 +56,7 @@ function CtaSection() {
                 variant="outline" 
                 size="lg"
                 className="border-2 border-white text-white hover:bg-white hover:text-blue-600 px-8 py-4 text-lg font-semibold rounded-lg transition-all duration-200"
-                onClick={() => navigate('/courses')}
+                onClick={() => navigate('/auth')}
               >
                 <Play className="mr-2 h-5 w-5" />
                 Browse Courses

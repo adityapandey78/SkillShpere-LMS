@@ -31,7 +31,7 @@ function HeroSection() {
               <Button 
                 size="lg" 
                 className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
-                onClick={() => navigate('/courses')}
+                onClick={() => navigate('/auth')}
               >
                 Explore Courses
                 <ArrowRight className="ml-2 h-5 w-5" />

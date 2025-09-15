@@ -66,7 +66,7 @@ function LandingHeader() {
             
             <button 
               className="text-gray-700 hover:text-blue-600 transition-colors font-medium"
-              onClick={() => navigate('/courses')}
+              onClick={() => navigate('/auth')}
             >
               Courses
             </button>
@@ -138,7 +138,7 @@ function LandingHeader() {
               
               <button 
                 className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-md font-medium"
-                onClick={() => navigate('/courses')}
+                onClick={() => navigate('/auth')}
               >
                 All Courses
               </button>
