@@ -263,5 +263,3 @@ POST   /student/course-progress/reset-progress           # Reset progress
 - Authentication and authorization
 - Payment processing
 - Cloud deployment and DevOps
-
-
