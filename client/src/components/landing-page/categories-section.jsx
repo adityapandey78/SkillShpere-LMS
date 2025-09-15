@@ -113,7 +113,7 @@ function CategoriesSection() {
               <Card 
                 key={category.id}
                 className="group cursor-pointer border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 bg-gradient-to-br from-white to-gray-50"
-                onClick={() => navigate(`/courses?category=${category.id}`)}
+                onClick={() => navigate(`/auth`)}
               >
                 <CardContent className="p-6">
                   <div className="relative overflow-hidden rounded-lg mb-4">
