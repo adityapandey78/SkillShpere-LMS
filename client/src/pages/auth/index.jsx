@@ -312,7 +312,7 @@ function AuthPage() {
                             size="sm"
                             variant="outline"
                             className="h-8 text-xs"
-                            onClick={() => handleCopyCredentials("user1@email.com", "123456", "Instructor")}
+                            onClick={() => handleCopyCredentials("demoinstructor@email.com", "123456", "Instructor")}
                           >
                             {copiedField === "Instructor" ? (
                               <Check className="h-3 w-3 mr-1" />
@@ -326,7 +326,7 @@ function AuthPage() {
                           <div className="flex items-center gap-2">
                             <span className="text-gray-500 text-xs w-16">Email:</span>
                             <code className="bg-gray-100 px-2 py-1 rounded text-xs font-mono text-gray-700">
-                              user1@email.com
+                              demoinstructor@email.com
                             </code>
                           </div>
                           <div className="flex items-center gap-2">

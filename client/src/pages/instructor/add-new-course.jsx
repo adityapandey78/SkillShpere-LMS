@@ -147,26 +147,46 @@ function AddNewCoursePage() {
 
   return (
     <div className="container mx-auto p-4">
-      <div className="flex justify-between">
-        <h1 className="text-3xl font-extrabold mb-5">Create a new course</h1>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-extrabold text-gray-900">Create a new course</h1>
+          <p className="text-gray-600 mt-1">Fill in the details to create your course</p>
+        </div>
         <Button
           disabled={!validateFormData()}
-          className="text-sm tracking-wider font-bold px-8"
+          className={`px-8 py-6 text-base font-semibold rounded-lg shadow-lg transition-all duration-200 ${
+            validateFormData()
+              ? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white transform hover:scale-105"
+              : "bg-gray-200 text-gray-500 cursor-not-allowed"
+          }`}
           onClick={handleCreateCourse}
         >
-          {validateFormData() ? "SUBMIT" : "COMPLETE ALL FIELDS"}
+          {validateFormData() ? "Publish Course" : "Complete All Fields"}
         </Button>
       </div>
-      <Card>
-        <CardContent>
-          <div className="container mx-auto p-4">
-            <Tabs defaultValue="curriculum" className="space-y-4">
-              <TabsList>
-                <TabsTrigger value="curriculum">Curriculum</TabsTrigger>
-                <TabsTrigger value="course-landing-page">
+      <Card className="border-0 shadow-xl bg-white">
+        <CardContent className="p-6">
+          <div className="w-full">
+            <Tabs defaultValue="curriculum" className="space-y-6">
+              <TabsList className="grid w-full grid-cols-3 bg-gray-100 p-1 rounded-lg">
+                <TabsTrigger 
+                  value="curriculum"
+                  className="data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm rounded-md font-semibold transition-all"
+                >
+                  Curriculum
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="course-landing-page"
+                  className="data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm rounded-md font-semibold transition-all"
+                >
                   Course Landing Page
                 </TabsTrigger>
-                <TabsTrigger value="settings">Settings</TabsTrigger>
+                <TabsTrigger 
+                  value="settings"
+                  className="data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm rounded-md font-semibold transition-all"
+                >
+                  Settings
+                </TabsTrigger>
               </TabsList>
               <TabsContent value="curriculum">
                 <CourseCurriculum />

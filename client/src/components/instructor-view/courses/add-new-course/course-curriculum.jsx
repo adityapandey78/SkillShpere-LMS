@@ -187,30 +187,36 @@ function CourseCurriculum() {
   }
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row justify-between">
-        <CardTitle>Create Course Curriculum</CardTitle>
+    <Card className="border-0 shadow-lg">
+      <CardHeader className="flex flex-row justify-between bg-gradient-to-r from-green-50 to-teal-50 border-b">
         <div>
-          <Input
-            type="file"
-            ref={bulkUploadInputRef}
-            accept="video/*"
-            multiple
-            className="hidden"
-            id="bulk-media-upload"
-            onChange={handleMediaBulkUpload}
-          />
-          <Button
-            as="label"
-            htmlFor="bulk-media-upload"
-            variant="outline"
-            className="cursor-pointer"
-            onClick={handleOpenBulkUploadDialog}
-          >
-            <Upload className="w-4 h-5 mr-2" />
-            Bulk Upload
-          </Button>
+          <CardTitle className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <div className="h-10 w-10 rounded-full bg-green-600 flex items-center justify-center text-white font-bold">
+              1
+            </div>
+            Create Course Curriculum
+          </CardTitle>
+          <p className="text-gray-600 text-sm mt-2">Add lectures and organize your course content</p>
         </div>
+        <Input
+          type="file"
+          ref={bulkUploadInputRef}
+          accept="video/*"
+          multiple
+          className="hidden"
+          id="bulk-media-upload"
+          onChange={handleMediaBulkUpload}
+        />
+        <Button
+          as="label"
+          htmlFor="bulk-media-upload"
+          variant="outline"
+          className="cursor-pointer"
+          onClick={handleOpenBulkUploadDialog}
+        >
+          <Upload className="w-4 h-5 mr-2" />
+          Bulk Upload
+        </Button>
       </CardHeader>
       <CardContent>
         <Button
@@ -220,14 +226,11 @@ function CourseCurriculum() {
           Add Lecture
         </Button>
         {mediaUploadProgress ? (
-          <MediaProgressbar
-            isMediaUploading={mediaUploadProgress}
-            progress={mediaUploadProgressPercentage}
-          />
+          <MediaProgressbar isMediaUploading={mediaUploadProgress} />
         ) : null}
         <div className="mt-4 space-y-4">
           {courseCurriculumFormData.map((curriculumItem, index) => (
-            <div className="border p-5 rounded-md">
+            <div key={index} className="border p-5 rounded-md">
               <div className="flex gap-5 items-center">
                 <h3 className="font-semibold">Lecture {index + 1}</h3>
                 <Input
