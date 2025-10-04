@@ -10,13 +10,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { signInFormControls, signUpFormControls } from "@/config";
 import { AuthContext } from "@/context/auth-context";
-import { ArrowLeft, Users, BookOpen, Award, Star } from "lucide-react";
+import { ArrowLeft, Users, BookOpen, Award, Star, User, GraduationCap, Copy, Check } from "lucide-react";
 import { useContext, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { useToast } from "@/hooks/use-toast";
 
 function AuthPage() {
   const [activeTab, setActiveTab] = useState("signin");
+  const [copiedField, setCopiedField] = useState(null);
   const navigate = useNavigate();
+  const { toast } = useToast();
   const {
     signInFormData,
     setSignInFormData,
@@ -24,6 +28,7 @@ function AuthPage() {
     setSignUpFormData,
     handleRegisterUser,
     handleLoginUser,
+    authLoading,
   } = useContext(AuthContext);
 
   function handleTabChange(value) {
@@ -48,8 +53,55 @@ function AuthPage() {
     );
   }
 
+  const handleCopyCredentials = (email, password, role) => {
+    setSignInFormData({ userEmail: email, password: password });
+    setCopiedField(role);
+    toast({
+      title: "Credentials Copied!",
+      description: `${role} credentials filled in the form.`,
+    });
+    setTimeout(() => setCopiedField(null), 2000);
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 relative">
+      {/* Loading Overlay */}
+      <AnimatePresence>
+        {authLoading && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm"
+          >
+            <div className="flex flex-col items-center space-y-4">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{
+                  duration: 1,
+                  repeat: Infinity,
+                  ease: "linear",
+                }}
+                className="h-16 w-16 rounded-full border-4 border-blue-200 border-t-blue-600"
+              />
+              <motion.p
+                className="text-lg font-medium text-gray-700"
+                animate={{
+                  opacity: [0.5, 1, 0.5],
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              >
+                {activeTab === "signin" ? "Signing you in..." : "Creating your account..."}
+              </motion.p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="container mx-auto px-4 lg:px-6 h-16 flex items-center justify-between">
@@ -175,11 +227,119 @@ function AuthPage() {
                       buttonText={"Sign In"}
                       formData={signInFormData}
                       setFormData={setSignInFormData}
-                      isButtonDisabled={!checkIfSignInFormIsValid()}
+                      isButtonDisabled={!checkIfSignInFormIsValid() || authLoading}
+                      isLoading={authLoading}
                       handleSubmit={handleLoginUser}
                     />
                   </CardContent>
                 </Card>
+
+                {/* Demo Credentials Card */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="mt-6"
+                >
+                  <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 shadow-lg">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                        <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
+                          <GraduationCap className="h-4 w-4 text-white" />
+                        </div>
+                        Demo Credentials
+                      </CardTitle>
+                      <CardDescription className="text-gray-600">
+                        Try our platform with pre-configured accounts
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {/* Student Demo */}
+                      <div className="bg-white rounded-lg p-4 border border-blue-200 hover:border-blue-400 transition-all duration-200 hover:shadow-md">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
+                              <User className="h-4 w-4 text-green-600" />
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-gray-900 text-sm">Student Account</h4>
+                              <p className="text-xs text-gray-500">Explore courses & learning</p>
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 text-xs"
+                            onClick={() => handleCopyCredentials("user2@email.com", "123456", "Student")}
+                          >
+                            {copiedField === "Student" ? (
+                              <Check className="h-3 w-3 mr-1" />
+                            ) : (
+                              <Copy className="h-3 w-3 mr-1" />
+                            )}
+                            {copiedField === "Student" ? "Filled!" : "Use"}
+                          </Button>
+                        </div>
+                        <div className="space-y-1 text-sm">
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-500 text-xs w-16">Email:</span>
+                            <code className="bg-gray-100 px-2 py-1 rounded text-xs font-mono text-gray-700">
+                              user2@email.com
+                            </code>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-500 text-xs w-16">Password:</span>
+                            <code className="bg-gray-100 px-2 py-1 rounded text-xs font-mono text-gray-700">
+                              123456
+                            </code>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Instructor Demo */}
+                      <div className="bg-white rounded-lg p-4 border border-blue-200 hover:border-blue-400 transition-all duration-200 hover:shadow-md">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
+                              <GraduationCap className="h-4 w-4 text-purple-600" />
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-gray-900 text-sm">Instructor Account</h4>
+                              <p className="text-xs text-gray-500">Create & manage courses</p>
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 text-xs"
+                            onClick={() => handleCopyCredentials("user1@email.com", "123456", "Instructor")}
+                          >
+                            {copiedField === "Instructor" ? (
+                              <Check className="h-3 w-3 mr-1" />
+                            ) : (
+                              <Copy className="h-3 w-3 mr-1" />
+                            )}
+                            {copiedField === "Instructor" ? "Filled!" : "Use"}
+                          </Button>
+                        </div>
+                        <div className="space-y-1 text-sm">
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-500 text-xs w-16">Email:</span>
+                            <code className="bg-gray-100 px-2 py-1 rounded text-xs font-mono text-gray-700">
+                              user1@email.com
+                            </code>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-500 text-xs w-16">Password:</span>
+                            <code className="bg-gray-100 px-2 py-1 rounded text-xs font-mono text-gray-700">
+                              123456
+                            </code>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
               </TabsContent>
               
               <TabsContent value="signup">
@@ -196,7 +356,8 @@ function AuthPage() {
                       buttonText={"Sign Up"}
                       formData={signUpFormData}
                       setFormData={setSignUpFormData}
-                      isButtonDisabled={!checkIfSignUpFormIsValid()}
+                      isButtonDisabled={!checkIfSignUpFormIsValid() || authLoading}
+                      isLoading={authLoading}
                       handleSubmit={handleRegisterUser}
                     />
                   </CardContent>

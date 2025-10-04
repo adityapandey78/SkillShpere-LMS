@@ -14,10 +14,12 @@ export default function AuthProvider({ children }) {
     user: null,
   });
   const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(false);
   const { toast } = useToast();
 
   async function handleRegisterUser(event) {
     event.preventDefault();
+    setAuthLoading(true);
     try {
       const data = await registerService(signUpFormData);
       if (data.success) {
@@ -39,11 +41,14 @@ export default function AuthProvider({ children }) {
         title: "Registration Failed",
         description: error.response?.data?.message || "Network error. Please try again.",
       });
+    } finally {
+      setAuthLoading(false);
     }
   }
 
   async function handleLoginUser(event) {
     event.preventDefault();
+    setAuthLoading(true);
     try {
       const data = await loginService(signInFormData);
       // console.log(data, "datadatadatadatadata");
@@ -82,6 +87,8 @@ export default function AuthProvider({ children }) {
         authenticate: false,
         user: null,
       });
+    } finally {
+      setAuthLoading(false);
     }
   }
 
@@ -138,6 +145,7 @@ export default function AuthProvider({ children }) {
         handleRegisterUser,
         handleLoginUser,
         auth,
+        authLoading,
         resetCredentials,
       }}
     >
