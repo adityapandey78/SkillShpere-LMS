@@ -1,4 +1,4 @@
-import { Skeleton } from "@/components/ui/skeleton";
+import LoadingScreen from "@/components/ui/loading-screen";
 import { initialSignInFormData, initialSignUpFormData } from "@/config";
 import { checkAuthService, loginService, registerService } from "@/services";
 import { useToast } from "@/hooks/use-toast";
@@ -141,7 +141,7 @@ export default function AuthProvider({ children }) {
         resetCredentials,
       }}
     >
-      {loading ? <Skeleton /> : children}
+      {loading ? <LoadingScreen /> : children}
     </AuthContext.Provider>
   );
 }
