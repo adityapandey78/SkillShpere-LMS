@@ -1,8 +1,8 @@
-import LoadingScreen from "@/components/ui/loading-screen";
+import PageLoader from "@/components/ui/page-loader";
 import { initialSignInFormData, initialSignUpFormData } from "@/config";
 import { checkAuthService, loginService, registerService } from "@/services";
 import { useToast } from "@/hooks/use-toast";
-import { createContext, useEffect, useState } from "react";
+import { createContext, useEffect, useState, useMemo } from "react";
 
 export const AuthContext = createContext(null);
 
@@ -16,6 +16,19 @@ export default function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [authLoading, setAuthLoading] = useState(false);
   const { toast } = useToast();
+
+  // Random engaging loading messages
+  const loadingMessage = useMemo(() => {
+    const messages = [
+      " Setting up your learning space...",
+      "Preparing your journey to success...",
+      "Getting everything ready for you...",
+      "Unlocking your potential...",
+      "Creating your personalized experience...",
+      "Loading your world of knowledge...",
+    ];
+    return messages[Math.floor(Math.random() * messages.length)];
+  }, []);
 
   async function handleRegisterUser(event) {
     event.preventDefault();
@@ -149,7 +162,13 @@ export default function AuthProvider({ children }) {
         resetCredentials,
       }}
     >
-      {loading ? <LoadingScreen /> : children}
+      {loading ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+          <PageLoader message={loadingMessage} />
+        </div>
+      ) : (
+        children
+      )}
     </AuthContext.Provider>
   );
 }

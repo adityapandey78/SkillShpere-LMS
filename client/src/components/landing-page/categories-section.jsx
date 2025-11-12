@@ -12,6 +12,7 @@ import {
   ArrowRight
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import LazyImage from "@/components/ui/lazy-image";
 
 const categories = [
   {
@@ -117,10 +118,11 @@ function CategoriesSection() {
               >
                 <CardContent className="p-6">
                   <div className="relative overflow-hidden rounded-lg mb-4">
-                    <img 
+                    <LazyImage 
                       src={category.image} 
                       alt={category.name}
                       className="w-full h-40 object-cover transition-transform duration-300 group-hover:scale-110"
+                      placeholderClassName="rounded-lg"
                     />
                     <div className={`absolute top-3 right-3 p-2 rounded-full ${category.color}`}>
                       <IconComponent className="h-5 w-5" />

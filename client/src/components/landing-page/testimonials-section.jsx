@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Star, Quote } from "lucide-react";
+import LazyImage from "@/components/ui/lazy-image";
 
 const testimonials = [
   {
@@ -92,10 +93,11 @@ function TestimonialsSection() {
                 
                 {/* Author */}
                 <div className="flex items-center">
-                  <img
+                  <LazyImage
                     src={testimonial.image}
                     alt={testimonial.name}
                     className="w-12 h-12 rounded-full object-cover mr-4"
+                    placeholderClassName="rounded-full"
                   />
                   <div>
                     <div className="font-semibold text-gray-900">

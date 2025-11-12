@@ -20,6 +20,7 @@ import {
   Award,
   Play
 } from "lucide-react";
+import LazyImage from "@/components/ui/lazy-image";
 
 function StudentHomePage() {
   const { studentViewCoursesList, setStudentViewCoursesList } =
@@ -118,10 +119,11 @@ function StudentHomePage() {
             </div>
 
             <div className="relative">
-              <img
+              <LazyImage
                 src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
                 alt="Students learning"
                 className="w-full h-auto rounded-2xl shadow-2xl"
+                placeholderClassName="rounded-2xl"
               />
               <div className="absolute -bottom-4 -right-4 bg-white bg-opacity-90 backdrop-blur-sm p-4 rounded-xl shadow-lg">
                 <div className="flex items-center space-x-2">
@@ -208,10 +210,11 @@ function StudentHomePage() {
                     onClick={() => handleCourseNavigate(courseItem?._id)}
                   >
                     <div className="relative">
-                      <img
+                      <LazyImage
                         src={courseItem?.image || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80"}
                         alt={courseItem?.title}
                         className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
+                        placeholderClassName="rounded-none"
                       />
                       <div className="absolute top-3 right-3">
                         {courseItem?.pricing === 0 ? (

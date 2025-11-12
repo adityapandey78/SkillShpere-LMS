@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { useContext, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import LazyImage from "@/components/ui/lazy-image";
 
 function createSearchParamsHelper(filterParams) {
   const queryParams = [];
@@ -276,10 +277,11 @@ function StudentViewCoursesPage() {
                     <CardContent className="p-0">
                       <div className="flex flex-col sm:flex-row">
                         <div className="sm:w-72 h-48 sm:h-40 flex-shrink-0 relative overflow-hidden">
-                          <img
+                          <LazyImage
                             src={courseItem?.image || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80"}
                             alt={courseItem?.title}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            placeholderClassName="rounded-none"
                           />
                           <div className="absolute top-3 right-3">
                             {courseItem?.pricing === 0 ? (

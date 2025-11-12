@@ -1,13 +1,15 @@
 import LandingHeader from "@/components/landing-page/header";
 import HeroSection from "@/components/landing-page/hero-section";
-import CategoriesSection from "@/components/landing-page/categories-section";
-import FeaturesSection from "@/components/landing-page/features-section";
-import TestimonialsSection from "@/components/landing-page/testimonials-section";
-import CtaSection from "@/components/landing-page/cta-section";
-import Footer from "@/components/landing-page/footer";
-import { useContext, useEffect } from "react";
+import { useContext, useEffect, lazy, Suspense } from "react";
 import { AuthContext } from "@/context/auth-context";
 import { useNavigate } from "react-router-dom";
+
+// Lazy load sections below the fold
+const CategoriesSection = lazy(() => import("@/components/landing-page/categories-section"));
+const FeaturesSection = lazy(() => import("@/components/landing-page/features-section"));
+const TestimonialsSection = lazy(() => import("@/components/landing-page/testimonials-section"));
+const CtaSection = lazy(() => import("@/components/landing-page/cta-section"));
+const Footer = lazy(() => import("@/components/landing-page/footer"));
 
 function LandingPage() {
   const { auth } = useContext(AuthContext);
@@ -33,11 +35,13 @@ function LandingPage() {
     <div className="min-h-screen bg-white">
       <LandingHeader />
       <HeroSection />
-      <CategoriesSection />
-      <FeaturesSection />
-      <TestimonialsSection />
-      <CtaSection />
-      <Footer />
+      <Suspense fallback={<div className="h-64 w-full" />}>
+        <CategoriesSection />
+        <FeaturesSection />
+        <TestimonialsSection />
+        <CtaSection />
+        <Footer />
+      </Suspense>
     </div>
   );
 }
