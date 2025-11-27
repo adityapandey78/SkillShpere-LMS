@@ -31,6 +31,7 @@ import {
 import { useContext, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import LazyImage from "@/components/ui/lazy-image";
+import images from "@/assets/images";
 
 function createSearchParamsHelper(filterParams) {
   const queryParams = [];
@@ -278,7 +279,7 @@ function StudentViewCoursesPage() {
                       <div className="flex flex-col sm:flex-row">
                         <div className="sm:w-72 h-48 sm:h-40 flex-shrink-0 relative overflow-hidden">
                           <LazyImage
-                            src={courseItem?.image || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80"}
+                            src={courseItem?.image || images.studentView.coursePlaceholder}
                             alt={courseItem?.title}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                             placeholderClassName="rounded-none"

@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/table";
 import { DollarSign, Users, BookOpen, TrendingUp, Award, Clock } from "lucide-react";
 import { motion } from "framer-motion";
+import images from "@/assets/images";
 
 function InstructorDashboard({ listOfCourses }) {
   function calculateTotalStudentsAndProfit() {
@@ -107,7 +108,7 @@ function InstructorDashboard({ listOfCourses }) {
         <div className="absolute top-0 right-0 -mt-12 -mr-12 h-48 w-48 rounded-full bg-white opacity-10"></div>
         <div className="absolute bottom-0 right-0 -mb-8 -mr-8 h-32 w-32 rounded-full bg-white opacity-10"></div>
         <img
-          src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80"
+          src={images.instructorView.dashboardWelcome}
           alt="Teaching"
           className="absolute bottom-0 right-8 h-48 w-auto opacity-20 hidden lg:block"
         />
@@ -196,7 +197,7 @@ function InstructorDashboard({ listOfCourses }) {
             ) : (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <img
-                  src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80"
+                  src={images.instructorView.dashboardStats}
                   alt="No students"
                   className="h-48 w-auto opacity-50 mb-4 rounded-lg"
                 />

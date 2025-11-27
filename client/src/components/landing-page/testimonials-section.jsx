@@ -1,13 +1,14 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Star, Quote } from "lucide-react";
 import LazyImage from "@/components/ui/lazy-image";
+import images from "@/assets/images";
 
 const testimonials = [
   {
     name: "Sarah Johnson",
     role: "Full Stack Developer",
     company: "Google",
-    image: "https://images.unsplash.com/photo-1494790108755-2616b62ad6b1?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80",
+    image: images.landingPage.testimonials.sarahJohnson,
     content: "SkillSphere transformed my career completely. The web development courses are incredibly comprehensive and the instructors are world-class.",
     rating: 5
   },
@@ -15,7 +16,7 @@ const testimonials = [
     name: "Michael Chen",
     role: "Data Scientist",
     company: "Microsoft",
-    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80",
+    image: images.landingPage.testimonials.michaelChen,
     content: "The AI and machine learning courses helped me transition into data science. The practical projects were exactly what I needed.",
     rating: 5
   },
@@ -23,7 +24,7 @@ const testimonials = [
     name: "Emily Rodriguez",
     role: "UX Designer",
     company: "Adobe",
-    image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80",
+    image: images.landingPage.testimonials.emilyRodriguez,
     content: "Amazing platform with high-quality content. The design courses are perfect for both beginners and advanced learners.",
     rating: 5
   },
@@ -31,7 +32,7 @@ const testimonials = [
     name: "David Thompson",
     role: "Business Analyst",
     company: "Amazon",
-    image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80",
+    image: images.landingPage.testimonials.davidThompson,
     content: "The business and analytics courses gave me the skills I needed to advance in my career. Highly recommend SkillSphere!",
     rating: 5
   },
@@ -39,7 +40,7 @@ const testimonials = [
     name: "Lisa Park",
     role: "Digital Marketer",
     company: "Meta",
-    image: "https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80",
+    image: images.landingPage.testimonials.lisaPark,
     content: "The marketing courses are incredibly detailed and practical. I was able to implement what I learned immediately at work.",
     rating: 5
   },
@@ -47,7 +48,7 @@ const testimonials = [
     name: "James Wilson",
     role: "Software Engineer",
     company: "Netflix",
-    image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80",
+    image: images.landingPage.testimonials.jamesWilson,
     content: "Excellent platform for continuous learning. The mobile app makes it easy to learn on the go during my commute.",
     rating: 5
   }

@@ -8,6 +8,7 @@ import { fetchInstructorCourseListService } from "@/services";
 import { BarChart, Book, LogOut, GraduationCap, Menu, X } from "lucide-react";
 import { useContext, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import images from "@/assets/images";
 
 function InstructorDashboardpage() {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -73,7 +74,7 @@ function InstructorDashboardpage() {
           <div className="flex items-center space-x-4">
             <div className="relative">
               <img
-                src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80"
+                src={images.instructorView.avatarPlaceholder}
                 alt="Instructor"
                 className="h-14 w-14 rounded-full object-cover border-2 border-blue-600 shadow-lg"
               />
@@ -185,7 +186,7 @@ function InstructorDashboardpage() {
               <div className="p-6 border-b border-gray-200 bg-gradient-to-br from-blue-50 to-indigo-50">
                 <div className="flex items-center space-x-4">
                   <img
-                    src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80"
+                    src={images.instructorView.avatarPlaceholder}
                     alt="Instructor"
                     className="h-12 w-12 rounded-full object-cover border-2 border-blue-600"
                   />

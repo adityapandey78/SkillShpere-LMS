@@ -18,6 +18,7 @@ import { Delete, Edit, Plus, Users, DollarSign, TrendingUp, BookOpen } from "luc
 import { useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import images from "@/assets/images";
 
 function InstructorCourses({ listOfCourses }) {
   const navigate = useNavigate();
@@ -223,7 +224,7 @@ function InstructorCourses({ listOfCourses }) {
                   transition={{ duration: 0.3 }}
                 >
                   <img
-                    src="https://images.unsplash.com/photo-1516321497487-e288fb19713f?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80"
+                    src={images.instructorView.emptyCoursePlaceholder}
                     alt="No courses"
                     className="h-64 w-auto opacity-70 mb-6 rounded-2xl shadow-xl"
                   />

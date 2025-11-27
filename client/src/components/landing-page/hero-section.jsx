@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Play, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import LazyImage from "@/components/ui/lazy-image";
+import images from "@/assets/images";
 
 function HeroSection() {
   const navigate = useNavigate();
@@ -79,7 +80,7 @@ function HeroSection() {
           <div className="relative">
             <div className="relative z-10">
               <LazyImage
-                src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1471&q=80"
+                src={images.landingPage.hero}
                 alt="Students learning together"
                 className="w-full h-auto rounded-2xl shadow-2xl"
                 placeholderClassName="rounded-2xl"

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import LazyImage from "@/components/ui/lazy-image";
+import images from "@/assets/images";
 
 const categories = [
   {
@@ -22,7 +23,7 @@ const categories = [
     color: "bg-blue-100 text-blue-600",
     description: "Master modern web technologies",
     courses: "120+ courses",
-    image: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"
+    image: images.landingPage.categories.webDevelopment
   },
   {
     id: "design",
@@ -31,7 +32,7 @@ const categories = [
     color: "bg-purple-100 text-purple-600",
     description: "Creative design & user experience",
     courses: "85+ courses",
-    image: "https://images.unsplash.com/photo-1558655146-9f40138edfeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"
+    image: images.landingPage.categories.design
   },
   {
     id: "data-science",
@@ -40,7 +41,7 @@ const categories = [
     color: "bg-green-100 text-green-600",
     description: "Analytics & machine learning",
     courses: "95+ courses",
-    image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"
+    image: images.landingPage.categories.dataScience
   },
   {
     id: "artificial-intelligence",
@@ -49,7 +50,7 @@ const categories = [
     color: "bg-orange-100 text-orange-600",
     description: "Future of technology",
     courses: "75+ courses",
-    image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"
+    image: images.landingPage.categories.aiMachineLearning
   },
   {
     id: "photography",
@@ -58,7 +59,7 @@ const categories = [
     color: "bg-pink-100 text-pink-600",
     description: "Visual storytelling mastery",
     courses: "60+ courses",
-    image: "https://images.unsplash.com/photo-1606983340126-99ab4feaa64a?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"
+    image: images.landingPage.categories.photography
   },
   {
     id: "music",
@@ -67,7 +68,7 @@ const categories = [
     color: "bg-indigo-100 text-indigo-600",
     description: "Create beautiful melodies",
     courses: "40+ courses",
-    image: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"
+    image: images.landingPage.categories.music
   },
   {
     id: "business",
@@ -76,7 +77,7 @@ const categories = [
     color: "bg-yellow-100 text-yellow-600",
     description: "Entrepreneurship & leadership",
     courses: "110+ courses",
-    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"
+    image: images.landingPage.categories.business
   },
   {
     id: "languages",
@@ -85,7 +86,7 @@ const categories = [
     color: "bg-teal-100 text-teal-600",
     description: "Connect with the world",
     courses: "90+ courses",
-    image: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"
+    image: images.landingPage.categories.languages
   }
 ];
 

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import images from "@/assets/images";
 
 function StudentCoursesPage() {
   const { auth } = useContext(AuthContext);
@@ -111,7 +112,7 @@ function StudentCoursesPage() {
                     <CardContent className="p-0">
                       <div className="relative">
                         <img
-                          src={course?.courseImage || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80"}
+                          src={course?.courseImage || images.studentView.coursePlaceholder}
                           alt={course?.title}
                           className="w-full h-48 object-cover rounded-t-lg group-hover:scale-105 transition-transform duration-300"
                         />

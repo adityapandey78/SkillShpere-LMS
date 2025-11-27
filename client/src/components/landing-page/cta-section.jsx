@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Play, Users, Award } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import LazyImage from "@/components/ui/lazy-image";
+import images from "@/assets/images";
 
 function CtaSection() {
   const navigate = useNavigate();
@@ -81,7 +82,7 @@ function CtaSection() {
           <div className="relative">
             <div className="relative z-10">
               <LazyImage
-                src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+                src={images.landingPage.cta}
                 alt="Person learning online"
                 className="w-full h-auto rounded-2xl shadow-2xl"
                 placeholderClassName="rounded-2xl"

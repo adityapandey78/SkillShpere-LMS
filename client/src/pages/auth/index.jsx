@@ -15,6 +15,7 @@ import { useContext, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
+import images from "@/assets/images";
 
 function AuthPage() {
   const [activeTab, setActiveTab] = useState("signin");
@@ -183,7 +184,7 @@ function AuthPage() {
             {/* Student Image */}
             <div className="hidden lg:block">
               <img
-                src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+                src={images.authPage.authBackground}
                 alt="Students learning"
                 className="w-full h-64 object-cover rounded-2xl shadow-lg"
               />
