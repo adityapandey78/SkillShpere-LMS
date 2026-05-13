@@ -32,16 +32,40 @@ app.use(
 
 app.use(express.json());
 
-//database connection
-mongoose
-  .connect(MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    serverSelectionTimeoutMS: 30000,
-    socketTimeoutMS: 45000,
-  })
-  .then(() => console.log("mongodb is connected"))
-  .catch((e) => console.log("MongoDB connection error:", e));
+// Cache the connection across Vercel serverless invocations
+let isConnected = false;
+
+async function connectDB() {
+  if (isConnected) return;
+  try {
+    await mongoose.connect(MONGO_URI, {
+      serverSelectionTimeoutMS: 10000, // Fail fast — was 30s, causing 30s hangs
+      socketTimeoutMS: 45000,
+      maxPoolSize: 10,
+      // Keep TCP connection alive so Atlas doesn't close idle connections
+      heartbeatFrequencyMS: 10000,
+    });
+    isConnected = true;
+    console.log("mongodb is connected");
+  } catch (e) {
+    console.log("MongoDB connection error:", e);
+    throw e;
+  }
+}
+
+// Connect on startup; reconnect middleware ensures every request has a live connection
+connectDB();
+
+app.use(async (req, res, next) => {
+  if (!isConnected) {
+    try {
+      await connectDB();
+    } catch {
+      return res.status(503).json({ success: false, message: "Database unavailable" });
+    }
+  }
+  next();
+});
 
 //routes configuration
 app.use("/auth", authRoutes);

@@ -115,23 +115,20 @@ export default function AuthProvider({ children }) {
           authenticate: true,
           user: data.data.user,
         });
-        setLoading(false);
       } else {
         setAuth({
           authenticate: false,
           user: null,
         });
-        setLoading(false);
       }
     } catch (error) {
       console.log(error);
-      if (!error?.response?.data?.success) {
-        setAuth({
-          authenticate: false,
-          user: null,
-        });
-        setLoading(false);
-      }
+      setAuth({
+        authenticate: false,
+        user: null,
+      });
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -143,6 +140,12 @@ export default function AuthProvider({ children }) {
   }
 
   useEffect(() => {
+    // Skip API call entirely if there's no stored token — user is definitely unauthenticated
+    const token = JSON.parse(sessionStorage.getItem("accessToken") || "null");
+    if (!token) {
+      setLoading(false);
+      return;
+    }
     checkAuthUser();
   }, []);
 

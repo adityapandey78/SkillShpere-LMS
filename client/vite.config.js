@@ -10,20 +10,29 @@ export default defineConfig({
     },
   },
   build: {
-    // Enable chunk splitting for better caching
     rollupOptions: {
       output: {
         manualChunks: {
-          // Separate vendor chunks
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
           'ui-vendor': ['framer-motion', 'lucide-react'],
+          'radix-vendor': [
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-label',
+            '@radix-ui/react-select',
+            '@radix-ui/react-tabs',
+            '@radix-ui/react-progress',
+          ],
         },
       },
     },
-    // Optimize chunk size
     chunkSizeWarningLimit: 1000,
+    // Minify assets more aggressively
+    minify: 'esbuild',
+    // Generate source maps only in development
+    sourcemap: false,
+    // Inline small assets to save requests
+    assetsInlineLimit: 4096,
   },
-  // Optimize dependencies pre-bundling
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom', 'framer-motion'],
   },
