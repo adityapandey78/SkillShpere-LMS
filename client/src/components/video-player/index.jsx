@@ -31,10 +31,59 @@ function VideoPlayer({
   const [showControls, setShowControls] = useState(true);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
+  const [isProgressHovered, setIsProgressHovered] = useState(false);
 
   const playerRef = useRef(null);
   const playerContainerRef = useRef(null);
   const controlsTimeoutRef = useRef(null);
+
+  // Guards against firing the completion callback more than once per URL
+  const completionFiredRef = useRef(false);
+
+  // YouTube-specific internal playback state — stores the last known played
+  // fraction so fireCompletion can report an accurate value even when called
+  // from onEnded (where played may have already reset to 0)
+  const ytStateRef = useRef({ lastPlayed: 0 });
+
+  const isYoutube =
+    typeof url === "string" &&
+    (url.includes("youtube.com") || url.includes("youtu.be"));
+
+  // ── Reset everything when the URL changes (lecture switch) ─────────────────
+  // NOTE: with key={lecture._id} on the parent's <VideoPlayer> this also runs
+  // on initial mount for each lecture, giving a guaranteed clean slate.
+  useEffect(() => {
+    setPlayed(0);
+    setPlaying(false);
+    completionFiredRef.current = false;
+    ytStateRef.current = { lastPlayed: 0 };
+  }, [url]);
+
+  // ── Centralised completion firing ──────────────────────────────────────────
+  // Called from both the progress-threshold effect and the onEnded handler so
+  // either path can trigger completion, but only fires once per URL.
+  function fireCompletion() {
+    if (completionFiredRef.current || !onProgressUpdate) return;
+    completionFiredRef.current = true;
+    onProgressUpdate({
+      ...progressData,
+      // For YouTube report the last real played fraction; for uploads it's 1
+      progressValue: isYoutube ? ytStateRef.current.lastPlayed : 1,
+    });
+  }
+
+  // ── Progress-based threshold detection ────────────────────────────────────
+  useEffect(() => {
+    const threshold = isYoutube ? 0.85 : 1;
+    if (played >= threshold) fireCompletion();
+  }, [played]);
+
+  // ── Guaranteed fallback: fire on video end ─────────────────────────────────
+  function handleEnded() {
+    fireCompletion();
+  }
+
+  // ── Standard player handlers ───────────────────────────────────────────────
 
   function handlePlayAndPause() {
     setPlaying(!playing);
@@ -43,6 +92,7 @@ function VideoPlayer({
   function handleProgress(state) {
     if (!seeking) {
       setPlayed(state.played);
+      if (isYoutube) ytStateRef.current.lastPlayed = state.played;
     }
   }
 
@@ -86,11 +136,7 @@ function VideoPlayer({
     const hh = date.getUTCHours();
     const mm = date.getUTCMinutes();
     const ss = pad(date.getUTCSeconds());
-
-    if (hh) {
-      return `${hh}:${pad(mm)}:${ss}`;
-    }
-
+    if (hh) return `${hh}:${pad(mm)}:${ss}`;
     return `${mm}:${ss}`;
   }
 
@@ -116,27 +162,16 @@ function VideoPlayer({
     const handleFullScreenChange = () => {
       setIsFullScreen(document.fullscreenElement);
     };
-
     document.addEventListener("fullscreenchange", handleFullScreenChange);
-
     return () => {
       document.removeEventListener("fullscreenchange", handleFullScreenChange);
     };
   }, []);
 
-  useEffect(() => {
-    if (played === 1) {
-      onProgressUpdate({
-        ...progressData,
-        progressValue: played,
-      });
-    }
-  }, [played]);
-
   return (
     <div
       ref={playerContainerRef}
-      className={`relative bg-gray-900 rounded-lg overflow-hidden shadow-2xl transition-all duration-300 ease-in-out 
+      className={`relative bg-gray-900 rounded-lg overflow-hidden shadow-2xl transition-all duration-300 ease-in-out
       ${isFullScreen ? "w-screen h-screen" : ""}
       `}
       style={{ width, height }}
@@ -154,22 +189,53 @@ function VideoPlayer({
         muted={muted}
         playbackRate={playbackSpeed}
         onProgress={handleProgress}
+        onEnded={handleEnded}
         onDuration={(d) => onDuration && onDuration(d)}
+        controls={isYoutube}
+        config={
+          isYoutube
+            ? { youtube: { playerVars: { rel: 0, modestbranding: 1 } } }
+            : undefined
+        }
       />
-      {showControls && (
+
+      {/* Custom controls — only for uploaded videos */}
+      {showControls && !isYoutube && (
         <div
           className={`absolute bottom-0 left-0 right-0 bg-gray-800 bg-opacity-75 p-4 transition-opacity duration-300 ${
             showControls ? "opacity-100" : "opacity-0"
           }`}
         >
-          <Slider
-            value={[played * 100]}
-            max={100}
-            step={0.1}
-            onValueChange={(value) => handleSeekChange([value[0] / 100])}
-            onValueCommit={handleSeekMouseUp}
-            className="w-full mb-4"
-          />
+          <div
+            className="w-full mb-4 py-2 cursor-pointer"
+            onMouseEnter={() => setIsProgressHovered(true)}
+            onMouseLeave={() => setIsProgressHovered(false)}
+          >
+            <Slider
+              value={[played * 100]}
+              max={100}
+              step={0.1}
+              onValueChange={(value) => handleSeekChange([value[0] / 100])}
+              onValueCommit={handleSeekMouseUp}
+              className={[
+                "w-full origin-center transition-transform duration-200",
+                isProgressHovered ? "scale-x-[1.02] scale-y-[1.2]" : "",
+                "[&>span:first-child]:transition-all [&>span:first-child]:duration-200",
+                "[&>span:first-child]:bg-white/30",
+                isProgressHovered
+                  ? "[&>span:first-child]:h-[5px]"
+                  : "[&>span:first-child]:h-[3px]",
+                "[&>span:first-child>span]:bg-white",
+                "[&>span[role=slider]]:bg-white [&>span[role=slider]]:border-0",
+                "[&>span[role=slider]]:shadow-[0_0_0_3px_rgba(255,255,255,0.25)]",
+                "[&>span[role=slider]]:transition-all [&>span[role=slider]]:duration-150",
+                isProgressHovered
+                  ? "[&>span[role=slider]]:opacity-100 [&>span[role=slider]]:scale-100"
+                  : "[&>span[role=slider]]:opacity-0 [&>span[role=slider]]:scale-75",
+              ].join(" ")}
+            />
+          </div>
+
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Button
@@ -217,9 +283,10 @@ function VideoPlayer({
                 max={100}
                 step={1}
                 onValueChange={(value) => handleVolumeChange([value[0] / 100])}
-                className="w-24 "
+                className="w-24"
               />
             </div>
+
             <div className="flex items-center space-x-2">
               <div className="text-white">
                 {formatTime(played * (playerRef?.current?.getDuration() || 0))}/{" "}

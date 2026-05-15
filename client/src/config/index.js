@@ -178,6 +178,7 @@ export const courseLandingInitialFormData = {
 export const courseCurriculumInitialFormData = [
   {
     title: "",
+    videoType: "upload",
     videoUrl: "",
     freePreview: false,
     public_id: "",

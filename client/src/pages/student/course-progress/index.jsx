@@ -32,7 +32,7 @@ import {
   Star,
   Target
 } from "lucide-react";
-import { useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import Confetti from "react-confetti";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -52,6 +52,16 @@ function StudentViewCourseProgressPage() {
   const [currentLectureDuration, setCurrentLectureDuration] = useState(0);
   const { id } = useParams();
 
+  // Stable refs so async callbacks always read the latest values without
+  // requiring those values in their dependency arrays (avoids stale closures)
+  const currentLectureRef = useRef(null);
+  const courseProgressRef = useRef(null);
+  const authRef = useRef(null);
+
+  useEffect(() => { currentLectureRef.current = currentLecture; }, [currentLecture]);
+  useEffect(() => { courseProgressRef.current = studentCurrentCourseProgress; }, [studentCurrentCourseProgress]);
+  useEffect(() => { authRef.current = auth; }, [auth]);
+
   function formatDuration(seconds) {
     if (!seconds || seconds <= 0) return null;
     const totalSec = Math.round(seconds);
@@ -63,60 +73,79 @@ function StudentViewCourseProgressPage() {
     return `${s}s`;
   }
 
-  async function fetchCurrentCourseProgress() {
+  // advanceLecture = true  → also jump to the first unviewed lecture (initial load)
+  // advanceLecture = false → only refresh progress data, keep current lecture playing
+  async function fetchCurrentCourseProgress(advanceLecture = false) {
     const response = await getCurrentCourseProgressService(auth?.user?._id, id);
-    if (response?.success) {
-      if (!response?.data?.isPurchased) {
-        setLockCourse(true);
-      } else {
-        setStudentCurrentCourseProgress({
-          courseDetails: response?.data?.courseDetails,
-          progress: response?.data?.progress,
-        });
+    if (!response?.success) return;
 
-        if (response?.data?.completed) {
-          setIsCourseCompleted(true);
-          setCurrentLecture(response?.data?.courseDetails?.curriculum[0]);
-          setCurrentLectureIndex(0);
-          setShowCourseCompleteDialog(true);
-          setShowConfetti(true);
-          return;
-        }
-
-        if (response?.data?.progress?.length === 0) {
-          setCurrentLecture(response?.data?.courseDetails?.curriculum[0]);
-          setCurrentLectureIndex(0);
-        } else {
-          const lastIndexOfViewedAsTrue = response?.data?.progress.reduceRight(
-            (acc, obj, index) => {
-              return acc === -1 && obj.viewed ? index : acc;
-            },
-            -1
-          );
-
-          const nextLectureIndex = lastIndexOfViewedAsTrue + 1;
-          setCurrentLecture(
-            response?.data?.courseDetails?.curriculum[nextLectureIndex]
-          );
-          setCurrentLectureIndex(nextLectureIndex);
-        }
-      }
+    if (!response.data?.isPurchased) {
+      setLockCourse(true);
+      return;
     }
-  }
 
-  async function updateCourseProgress() {
-    if (currentLecture) {
-      const response = await markLectureAsViewedService(
-        auth?.user?._id,
-        studentCurrentCourseProgress?.courseDetails?._id,
-        currentLecture._id
+    setStudentCurrentCourseProgress({
+      courseDetails: response.data.courseDetails,
+      progress: response.data.progress,
+    });
+
+    if (response.data.completed) {
+      setIsCourseCompleted(true);
+      setCurrentLecture(response.data.courseDetails.curriculum[0]);
+      setCurrentLectureIndex(0);
+      setShowCourseCompleteDialog(true);
+      setShowConfetti(true);
+      return;
+    }
+
+    if (!advanceLecture) return;
+
+    // Advance to the first unviewed lecture (only on initial load)
+    const curriculum = response.data.courseDetails.curriculum;
+    if (!response.data.progress?.length) {
+      setCurrentLecture(curriculum[0]);
+      setCurrentLectureIndex(0);
+    } else {
+      const lastViewedIdx = response.data.progress.reduceRight(
+        (acc, obj, idx) => (acc === -1 && obj.viewed ? idx : acc),
+        -1
       );
-
-      if (response?.success) {
-        fetchCurrentCourseProgress();
-      }
+      const nextIdx = Math.min(lastViewedIdx + 1, curriculum.length - 1);
+      setCurrentLecture(curriculum[nextIdx]);
+      setCurrentLectureIndex(nextIdx);
     }
   }
+
+  // Called by VideoPlayer once when the lecture reaches its completion
+  // threshold (85 % for YouTube, 100 % / onEnded for uploads).
+  // Uses refs so it is always reading the latest lecture and progress data
+  // regardless of when React scheduled this callback.
+  const handleVideoProgressUpdate = useCallback(async () => {
+    const lecture = currentLectureRef.current;
+    const courseProgress = courseProgressRef.current;
+    const user = authRef.current?.user;
+
+    if (!lecture?._id || !user?._id || !courseProgress?.courseDetails?._id) return;
+
+    const alreadyViewed = courseProgress.progress?.find(
+      (p) => p.lectureId === lecture._id
+    )?.viewed;
+    if (alreadyViewed) return;
+
+    try {
+      const response = await markLectureAsViewedService(
+        user._id,
+        courseProgress.courseDetails._id,
+        lecture._id
+      );
+      if (response?.success) {
+        // Refresh progress bar without auto-advancing the video player
+        await fetchCurrentCourseProgress(false);
+      }
+    } catch (err) {
+      console.error("Failed to mark lecture as viewed:", err);
+    }
+  }, [id]); // id is stable for the lifetime of this page
 
   async function handleRewatchCourse() {
     const response = await resetCourseProgressService(
@@ -177,13 +206,10 @@ function StudentViewCourseProgressPage() {
 
   const progressPercentage = calculateProgress();
 
+  // On first load: fetch progress AND advance to the first unviewed lecture
   useEffect(() => {
-    fetchCurrentCourseProgress();
+    fetchCurrentCourseProgress(true);
   }, [id]);
-
-  useEffect(() => {
-    if (currentLecture?.progressValue === 1) updateCourseProgress();
-  }, [currentLecture]);
 
   useEffect(() => {
     if (showConfetti) setTimeout(() => setShowConfetti(false), 15000);
@@ -252,10 +278,11 @@ function StudentViewCourseProgressPage() {
           {/* Video Player Container */}
           <div className="relative bg-black">
             <VideoPlayer
+              key={currentLecture?._id}
               width="100%"
               height="500px"
               url={currentLecture?.videoUrl}
-              onProgressUpdate={setCurrentLecture}
+              onProgressUpdate={handleVideoProgressUpdate}
               progressData={currentLecture}
               onDuration={handleLectureDuration}
             />

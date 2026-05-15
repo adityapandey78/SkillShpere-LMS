@@ -59,17 +59,22 @@ function AddNewCoursePage() {
     }
 
     for (const item of courseCurriculumFormData) {
+      const isYoutube = item.videoType === "youtube";
       if (
         isEmpty(item.title) ||
         isEmpty(item.videoUrl) ||
-        isEmpty(item.public_id)
+        (!isYoutube && isEmpty(item.public_id))
       ) {
-        console.log(`Missing curriculum data in item: title="${item.title}", videoUrl="${item.videoUrl}", public_id="${item.public_id}"`);
         return false;
+      }
+      if (isYoutube) {
+        const ytPattern =
+          /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[\w-]{11}/;
+        if (!ytPattern.test(item.videoUrl)) return false;
       }
 
       if (item.freePreview) {
-        hasFreePreview = true; //found at least one free preview
+        hasFreePreview = true;
       }
     }
 

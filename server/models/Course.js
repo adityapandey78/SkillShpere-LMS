@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 
 const LectureSchema = new mongoose.Schema({
   title: String,
+  videoType: { type: String, enum: ["upload", "youtube"], default: "upload" },
   videoUrl: String,
   public_id: String,
   freePreview: Boolean,
