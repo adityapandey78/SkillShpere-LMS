@@ -83,7 +83,7 @@ function StudentHomePage() {
               </div>
               
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button 
+                <Button
                   size="lg"
                   className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-3 font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
                   onClick={() => navigate('/student/courses')}
@@ -91,10 +91,9 @@ function StudentHomePage() {
                   <BookOpen className="mr-2 h-5 w-5" />
                   Explore All Courses
                 </Button>
-                <Button 
+                <Button
                   size="lg"
-                  variant="outline"
-                  className="border-white text-white hover:bg-white hover:text-blue-600 px-8 py-3 font-semibold rounded-lg transition-all duration-200"
+                  className="bg-white/20 backdrop-blur-sm border border-white text-white hover:bg-white/30 hover:border-white px-8 py-3 font-semibold rounded-lg transition-all duration-200"
                   onClick={() => navigate('/student/student-courses')}
                 >
                   <Play className="mr-2 h-5 w-5" />
@@ -312,8 +311,7 @@ function StudentHomePage() {
               </Button>
               <Button
                 size="lg"
-                variant="outline"
-                className="border-white text-white hover:bg-white hover:text-blue-600 px-8 py-3 font-semibold rounded-lg"
+                className="bg-white/20 backdrop-blur-sm border border-white text-white hover:bg-white/30 hover:border-white px-8 py-3 font-semibold rounded-lg transition-all duration-200"
                 onClick={() => navigate('/student/student-courses')}
               >
                 View My Progress

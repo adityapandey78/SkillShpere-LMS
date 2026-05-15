@@ -11,6 +11,7 @@ import {
   RotateCw,
   Volume2,
   VolumeX,
+  Zap,
 } from "lucide-react";
 
 function VideoPlayer({
@@ -19,6 +20,7 @@ function VideoPlayer({
   url,
   onProgressUpdate,
   progressData,
+  onDuration,
 }) {
   const [playing, setPlaying] = useState(false);
   const [volume, setVolume] = useState(0.5);
@@ -27,6 +29,8 @@ function VideoPlayer({
   const [seeking, setSeeking] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
 
   const playerRef = useRef(null);
   const playerContainerRef = useRef(null);
@@ -66,6 +70,11 @@ function VideoPlayer({
 
   function handleVolumeChange(newValue) {
     setVolume(newValue[0]);
+  }
+
+  function handlePlaybackSpeedChange(speed) {
+    setPlaybackSpeed(speed);
+    setShowSpeedMenu(false);
   }
 
   function pad(string) {
@@ -143,7 +152,9 @@ function VideoPlayer({
         playing={playing}
         volume={volume}
         muted={muted}
+        playbackRate={playbackSpeed}
         onProgress={handleProgress}
+        onDuration={(d) => onDuration && onDuration(d)}
       />
       {showControls && (
         <div
@@ -213,6 +224,33 @@ function VideoPlayer({
               <div className="text-white">
                 {formatTime(played * (playerRef?.current?.getDuration() || 0))}/{" "}
                 {formatTime(playerRef?.current?.getDuration() || 0)}
+              </div>
+              <div className="relative">
+                <Button
+                  className="text-white bg-transparent hover:text-white hover:bg-gray-700"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowSpeedMenu(!showSpeedMenu)}
+                >
+                  <Zap className="h-6 w-6" />
+                </Button>
+                {showSpeedMenu && (
+                  <div className="absolute bottom-full right-0 mb-2 bg-gray-900 border border-gray-700 rounded-lg shadow-lg z-50 min-w-max">
+                    {[0.5, 0.75, 1, 1.25, 1.5, 1.75, 2].map((speed) => (
+                      <button
+                        key={speed}
+                        onClick={() => handlePlaybackSpeedChange(speed)}
+                        className={`block w-full text-left px-4 py-2 text-sm transition-colors ${
+                          playbackSpeed === speed
+                            ? "bg-blue-600 text-white font-semibold"
+                            : "text-gray-300 hover:bg-gray-800"
+                        }`}
+                      >
+                        {speed}x
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
               <Button
                 className="text-white bg-transparent hover:text-white hover:bg-gray-700"

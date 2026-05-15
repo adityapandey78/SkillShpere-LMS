@@ -75,6 +75,7 @@ function CourseCurriculum() {
             ...cpyCourseCurriculumFormData[currentIndex],
             videoUrl: response?.data?.url,
             public_id: response?.data?.public_id,
+            duration: response?.data?.duration || 0,
           };
           setCourseCurriculumFormData(cpyCourseCurriculumFormData);
           setMediaUploadProgress(false);
@@ -99,6 +100,7 @@ function CourseCurriculum() {
         ...cpyCourseCurriculumFormData[currentIndex],
         videoUrl: "",
         public_id: "",
+        duration: 0,
       };
 
       setCourseCurriculumFormData(cpyCourseCurriculumFormData);
@@ -160,6 +162,7 @@ function CourseCurriculum() {
               cpyCourseCurriculumFormdata.length + (index + 1)
             }`,
             freePreview: false,
+            duration: item?.duration || 0,
           })),
         ];
         setCourseCurriculumFormData(cpyCourseCurriculumFormdata);

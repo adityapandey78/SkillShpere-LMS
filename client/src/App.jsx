@@ -17,6 +17,8 @@ const StudentViewCourseDetailsPage = lazy(() => import("./pages/student/course-d
 const PaypalPaymentReturnPage = lazy(() => import("./pages/student/payment-return"));
 const StudentCoursesPage = lazy(() => import("./pages/student/student-courses"));
 const StudentViewCourseProgressPage = lazy(() => import("./pages/student/course-progress"));
+const CertificatePage = lazy(() => import("./pages/student/certificate"));
+const CertificatesPage = lazy(() => import("./pages/student/certificates"));
 const LandingPage = lazy(() => import("./pages/landing"));
 
 function App() {
@@ -110,6 +112,8 @@ function App() {
             <Route path="payment-return" element={<PaypalPaymentReturnPage />} />
             <Route path="student-courses" element={<StudentCoursesPage />} />
             <Route path="course-progress/:id" element={<StudentViewCourseProgressPage />} />
+            <Route path="certificate/:courseId" element={<CertificatePage />} />
+            <Route path="certificates" element={<CertificatesPage />} />
           </Route>
 
           <Route path="*" element={<NotFoundPage />} />

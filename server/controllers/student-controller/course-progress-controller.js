@@ -180,8 +180,26 @@ const resetCurrentCourseProgress = async (req, res) => {
   }
 };
 
+const updateLectureDuration = async (req, res) => {
+  try {
+    const { courseId, lectureId, duration } = req.body;
+    if (!courseId || !lectureId || !duration) {
+      return res.status(400).json({ success: false, message: "Missing fields" });
+    }
+    await Course.updateOne(
+      { _id: courseId, "curriculum._id": lectureId },
+      { $set: { "curriculum.$.duration": Math.round(duration) } }
+    );
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Some error occured!" });
+  }
+};
+
 module.exports = {
   markCurrentLectureAsViewed,
   getCurrentCourseProgress,
   resetCurrentCourseProgress,
+  updateLectureDuration,
 };

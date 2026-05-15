@@ -15,6 +15,7 @@ import {
   getCurrentCourseProgressService,
   markLectureAsViewedService,
   resetCourseProgressService,
+  updateLectureDurationService,
 } from "@/services";
 import { 
   Check, 
@@ -47,7 +48,20 @@ function StudentViewCourseProgressPage() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [isSideBarOpen, setIsSideBarOpen] = useState(true);
   const [currentLectureIndex, setCurrentLectureIndex] = useState(0);
+  const [isCourseCompleted, setIsCourseCompleted] = useState(false);
+  const [currentLectureDuration, setCurrentLectureDuration] = useState(0);
   const { id } = useParams();
+
+  function formatDuration(seconds) {
+    if (!seconds || seconds <= 0) return null;
+    const totalSec = Math.round(seconds);
+    const h = Math.floor(totalSec / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+    if (h > 0) return s > 0 ? `${h}h ${m}m ${s}s` : `${h}h ${m}m`;
+    if (m > 0) return s > 0 ? `${m}m ${s}s` : `${m}m`;
+    return `${s}s`;
+  }
 
   async function fetchCurrentCourseProgress() {
     const response = await getCurrentCourseProgressService(auth?.user?._id, id);
@@ -61,6 +75,7 @@ function StudentViewCourseProgressPage() {
         });
 
         if (response?.data?.completed) {
+          setIsCourseCompleted(true);
           setCurrentLecture(response?.data?.courseDetails?.curriculum[0]);
           setCurrentLectureIndex(0);
           setShowCourseCompleteDialog(true);
@@ -136,9 +151,19 @@ function StudentViewCourseProgressPage() {
   };
 
   const selectLecture = (lecture, index) => {
+    setCurrentLectureDuration(0);
     setCurrentLecture(lecture);
     setCurrentLectureIndex(index);
   };
+
+  function handleLectureDuration(duration) {
+    setCurrentLectureDuration(duration);
+    const courseId = studentCurrentCourseProgress?.courseDetails?._id;
+    const lectureId = currentLecture?._id;
+    if (duration > 0 && courseId && lectureId) {
+      updateLectureDurationService(String(courseId), String(lectureId), Math.round(duration)).catch(() => {});
+    }
+  }
 
   // Calculate progress percentage
   const calculateProgress = () => {
@@ -191,15 +216,27 @@ function StudentViewCourseProgressPage() {
           {/* Progress Indicator */}
           <div className="hidden sm:flex items-center space-x-2">
             <div className="w-32 bg-gray-700 rounded-full h-2">
-              <div 
+              <div
                 className="bg-gradient-to-r from-green-400 to-blue-500 h-2 rounded-full transition-all duration-500"
                 style={{ width: `${progressPercentage}%` }}
               ></div>
             </div>
             <span className="text-sm font-medium text-gray-300">{progressPercentage}%</span>
           </div>
-          
-          <Button 
+
+          {/* Generate Certificate button shown when course is completed */}
+          {isCourseCompleted && (
+            <Button
+              onClick={() => navigate(`/student/certificate/${id}`)}
+              className="hidden sm:flex bg-yellow-500 hover:bg-yellow-400 text-gray-900 font-semibold shadow-lg"
+              size="sm"
+            >
+              <Award className="h-4 w-4 mr-2" />
+              Get Certificate
+            </Button>
+          )}
+
+          <Button
             onClick={() => setIsSideBarOpen(!isSideBarOpen)}
             className="bg-gray-800 hover:bg-gray-700 border-gray-600"
             variant="outline"
@@ -220,6 +257,7 @@ function StudentViewCourseProgressPage() {
               url={currentLecture?.videoUrl}
               onProgressUpdate={setCurrentLecture}
               progressData={currentLecture}
+              onDuration={handleLectureDuration}
             />
           </div>
           
@@ -265,12 +303,14 @@ function StudentViewCourseProgressPage() {
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <h2 className="text-2xl font-bold mb-2 text-white">{currentLecture?.title}</h2>
-                <div className="flex items-center space-x-4 text-gray-400 text-sm">
-                  <div className="flex items-center space-x-1">
-                    <Clock className="h-4 w-4" />
-                    <span>~15 mins</span>
+                {currentLectureDuration > 0 && (
+                  <div className="flex items-center space-x-4 text-gray-400 text-sm">
+                    <div className="flex items-center space-x-1">
+                      <Clock className="h-4 w-4" />
+                      <span>{formatDuration(currentLectureDuration)}</span>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
               
               {/* Achievement Badge */}
@@ -349,7 +389,7 @@ function StudentViewCourseProgressPage() {
                               {item?.title}
                             </p>
                             <p className="text-xs text-gray-400">
-                              Lecture {index + 1} • ~15 mins
+                              Lecture {index + 1}{formatDuration(item?.duration) ? ` • ${formatDuration(item.duration)}` : ""}
                             </p>
                           </div>
                           
@@ -445,35 +485,38 @@ function StudentViewCourseProgressPage() {
               <Award className="h-8 w-8 mr-3 text-yellow-400" />
               Congratulations! 🎉
             </DialogTitle>
-            <DialogDescription className="text-center space-y-4">
-              <div className="text-lg text-green-400 font-medium">
-                You have successfully completed the course!
-              </div>
-              <div className="text-gray-300">
-                Well done on finishing the course. You can now revisit any lecture or explore more courses.
-              </div>
-              <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                <Button 
-                  onClick={() => {
-                    setShowCourseCompleteDialog(false);
-                    navigate("/student/student-courses");
-                  }}
-                  className="bg-blue-600 hover:bg-blue-700 text-white flex-1 shadow-lg hover:shadow-blue-500/25 transition-all duration-200"
-                >
-                  <BookOpen className="h-4 w-4 mr-2" />
-                  My Courses
-                </Button>
-                <Button 
-                  onClick={() => {
-                    setShowCourseCompleteDialog(false);
-                    handleRewatchCourse();
-                  }}
-                  variant="outline"
-                  className="border-green-500 text-green-400 hover:bg-green-500/20 hover:border-green-400 flex-1 transition-all duration-200"
-                >
-                  <Play className="h-4 w-4 mr-2" />
-                  Rewatch Course
-                </Button>
+            {/* asChild makes Radix render a <div> instead of <p>, fixing the block-in-inline nesting warning */}
+            <DialogDescription asChild>
+              <div className="text-center space-y-4">
+                <p className="text-lg text-green-400 font-medium">
+                  You have successfully completed the course!
+                </p>
+                <p className="text-gray-300 text-sm">
+                  Well done on finishing the course. You can now revisit any lecture or explore more courses.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                  <Button
+                    onClick={() => {
+                      setShowCourseCompleteDialog(false);
+                      navigate(`/student/certificate/${id}`);
+                    }}
+                    className="bg-yellow-500 hover:bg-yellow-400 text-gray-900 font-semibold flex-1 shadow-lg transition-all duration-200"
+                  >
+                    <Award className="h-4 w-4 mr-2" />
+                    Generate Certificate
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setShowCourseCompleteDialog(false);
+                      handleRewatchCourse();
+                    }}
+                    variant="outline"
+                    className="border-green-500 text-green-400 hover:bg-green-500/20 hover:border-green-400 flex-1 transition-all duration-200"
+                  >
+                    <Play className="h-4 w-4 mr-2" />
+                    Rewatch Course
+                  </Button>
+                </div>
               </div>
             </DialogDescription>
           </DialogHeader>

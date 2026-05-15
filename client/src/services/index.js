@@ -170,3 +170,20 @@ export async function resetCourseProgressService(userId, courseId) {
 
   return data;
 }
+
+export async function updateLectureDurationService(courseId, lectureId, duration) {
+  const { data } = await axiosInstance.post(
+    `/student/course-progress/update-lecture-duration`,
+    { courseId, lectureId, duration }
+  );
+  return data;
+}
+
+export async function unenrollCourseService(studentId, courseId) {
+  const { data } = await axiosInstance.post(`/student/courses-bought/unenroll`, {
+    studentId,
+    courseId,
+  });
+
+  return data;
+}

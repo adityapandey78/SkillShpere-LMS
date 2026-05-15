@@ -31,4 +31,13 @@ const deleteMediaFromCloudinary = async (publicId) => {
   }
 };
 
-module.exports = { uploadMediaToCloudinary, deleteMediaFromCloudinary };
+const getVideoDuration = async (publicId) => {
+  try {
+    const result = await cloudinary.api.resource(publicId, { resource_type: "video" });
+    return result.duration || 0;
+  } catch {
+    return 0;
+  }
+};
+
+module.exports = { uploadMediaToCloudinary, deleteMediaFromCloudinary, getVideoDuration };
