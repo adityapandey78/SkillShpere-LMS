@@ -1,3 +1,5 @@
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,25 +18,79 @@ import {
   markLectureAsViewedService,
   resetCourseProgressService,
   updateLectureDurationService,
+  askAITutorService,
 } from "@/services";
-import { 
-  Check, 
-  ChevronLeft, 
-  Play, 
-  Clock, 
-  Award, 
-  BookOpen, 
-  SkipBack, 
+import {
+  Check,
+  ChevronLeft,
+  Play,
+  Clock,
+  Award,
+  BookOpen,
+  SkipBack,
   SkipForward,
   Menu,
   X,
   CheckCircle2,
   Star,
-  Target
+  Target,
+  Bot,
+  Send
 } from "lucide-react";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import Confetti from "react-confetti";
 import { useNavigate, useParams } from "react-router-dom";
+
+// Styled ReactMarkdown component map — matches Neural Ink dark theme
+const markdownComponents = {
+  h1: ({ children }) => (
+    <p style={{ color: "#10E9A0", fontSize: 15, fontWeight: 700, marginBottom: 6, marginTop: 10, fontFamily: "'Outfit', sans-serif", letterSpacing: "0.03em" }}>{children}</p>
+  ),
+  h2: ({ children }) => (
+    <p style={{ color: "#10E9A0", fontSize: 14, fontWeight: 600, marginBottom: 5, marginTop: 10, fontFamily: "'Outfit', sans-serif" }}>{children}</p>
+  ),
+  h3: ({ children }) => (
+    <p style={{ color: "rgba(16,233,160,0.75)", fontSize: 13.5, fontWeight: 600, marginBottom: 4, marginTop: 8, fontFamily: "'Outfit', sans-serif" }}>{children}</p>
+  ),
+  p: ({ children }) => (
+    <p style={{ color: "rgba(210,215,235,0.9)", fontSize: 13, lineHeight: 1.75, marginBottom: 6, fontFamily: "'Outfit', sans-serif" }}>{children}</p>
+  ),
+  ul: ({ children }) => (
+    <ul style={{ listStyle: "none", padding: 0, margin: "4px 0 8px" }}>{children}</ul>
+  ),
+  ol: ({ children }) => (
+    <ol style={{ paddingLeft: 18, margin: "4px 0 8px", color: "rgba(210,215,235,0.9)", fontSize: 13, fontFamily: "'Outfit', sans-serif" }}>{children}</ol>
+  ),
+  li: ({ children }) => (
+    <li style={{ display: "flex", gap: 7, marginBottom: 4, alignItems: "flex-start" }}>
+      <span style={{ color: "#10E9A0", flexShrink: 0, marginTop: 2, fontFamily: "monospace", fontWeight: 700, fontSize: 14 }}>›</span>
+      <span style={{ color: "rgba(210,215,235,0.9)", fontSize: 13, lineHeight: 1.7, fontFamily: "'Outfit', sans-serif" }}>{children}</span>
+    </li>
+  ),
+  code: ({ className, children }) => {
+    const isBlock = Boolean(className?.startsWith("language-"));
+    return isBlock ? (
+      <code style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 12, color: "rgba(210,215,235,0.85)" }}>{children}</code>
+    ) : (
+      <code style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 12, color: "#10E9A0", background: "rgba(16,233,160,0.1)", border: "1px solid rgba(16,233,160,0.2)", borderRadius: 4, padding: "0 5px" }}>{children}</code>
+    );
+  },
+  pre: ({ children }) => (
+    <pre style={{ background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "12px 14px", overflowX: "auto", margin: "8px 0", fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 12 }}>{children}</pre>
+  ),
+  strong: ({ children }) => (
+    <strong style={{ color: "#fff", fontWeight: 600 }}>{children}</strong>
+  ),
+  em: ({ children }) => (
+    <em style={{ color: "rgba(210,215,235,0.65)" }}>{children}</em>
+  ),
+  blockquote: ({ children }) => (
+    <blockquote style={{ borderLeft: "2px solid rgba(16,233,160,0.35)", paddingLeft: 12, margin: "8px 0", color: "rgba(210,215,235,0.65)", fontStyle: "italic", fontFamily: "'Outfit', sans-serif", fontSize: 13 }}>{children}</blockquote>
+  ),
+  hr: () => (
+    <hr style={{ border: "none", borderTop: "1px solid rgba(255,255,255,0.08)", margin: "10px 0" }} />
+  ),
+};
 
 function StudentViewCourseProgressPage() {
   const navigate = useNavigate();
@@ -50,6 +106,14 @@ function StudentViewCourseProgressPage() {
   const [currentLectureIndex, setCurrentLectureIndex] = useState(0);
   const [isCourseCompleted, setIsCourseCompleted] = useState(false);
   const [currentLectureDuration, setCurrentLectureDuration] = useState(0);
+  const [aiChatOpen, setAiChatOpen] = useState(false);
+  const [aiMessages, setAiMessages] = useState([
+    { role: "assistant", content: "Hi! I'm your AI tutor for this course. Ask me anything about the topics covered here." }
+  ]);
+  const [aiInput, setAiInput] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [detailedMode, setDetailedMode] = useState(false);
+  const chatBottomRef = useRef(null);
   const { id } = useParams();
 
   // Stable refs so async callbacks always read the latest values without
@@ -206,6 +270,73 @@ function StudentViewCourseProgressPage() {
 
   const progressPercentage = calculateProgress();
 
+  const scrollChatToBottom = (smooth = true) => {
+    chatBottomRef.current?.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "end" });
+  };
+
+  async function handleAISend() {
+    const trimmed = aiInput.trim();
+    if (!trimmed || aiLoading) return;
+
+    // History excludes the welcome message; the new user turn is sent separately
+    const historyForRequest = aiMessages.slice(1);
+
+    // Append user message + empty assistant placeholder in one update so chunks
+    // can flow into the placeholder without race conditions
+    setAiMessages(prev => [
+      ...prev,
+      { role: "user", content: trimmed },
+      { role: "assistant", content: "" },
+    ]);
+    setAiInput("");
+    setAiLoading(true);
+
+    // Scroll to bottom immediately so the user sees their message land
+    requestAnimationFrame(() => scrollChatToBottom(true));
+
+    let firstChunk = true;
+    try {
+      await askAITutorService(
+        studentCurrentCourseProgress?.courseDetails?._id,
+        trimmed,
+        historyForRequest,
+        detailedMode,
+        (chunk) => {
+          // Drop the typing indicator the moment the model starts emitting
+          if (firstChunk) {
+            setAiLoading(false);
+            firstChunk = false;
+          }
+          setAiMessages(prev => {
+            const next = [...prev];
+            const lastIdx = next.length - 1;
+            if (next[lastIdx]?.role === "assistant") {
+              next[lastIdx] = { ...next[lastIdx], content: next[lastIdx].content + chunk };
+            }
+            return next;
+          });
+          // Instant scroll during streaming — smooth would queue up and lag behind chunks
+          scrollChatToBottom(false);
+        }
+      );
+    } catch (err) {
+      const msg = err?.message || "Sorry, I had trouble connecting. Please try again.";
+      setAiMessages(prev => {
+        const next = [...prev];
+        const lastIdx = next.length - 1;
+        if (next[lastIdx]?.role === "assistant" && !next[lastIdx].content) {
+          next[lastIdx] = { ...next[lastIdx], content: msg };
+        } else {
+          next.push({ role: "assistant", content: `⚠ ${msg}` });
+        }
+        return next;
+      });
+    } finally {
+      setAiLoading(false);
+      setTimeout(() => scrollChatToBottom(true), 50);
+    }
+  }
+
   // On first load: fetch progress AND advance to the first unviewed lecture
   useEffect(() => {
     fetchCurrentCourseProgress(true);
@@ -214,6 +345,29 @@ function StudentViewCourseProgressPage() {
   useEffect(() => {
     if (showConfetti) setTimeout(() => setShowConfetti(false), 15000);
   }, [showConfetti]);
+
+  useEffect(() => {
+    const id = "ai-tutor-styles";
+    if (!document.getElementById(id)) {
+      const style = document.createElement("style");
+      style.id = id;
+      style.textContent = `
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;500;600&display=swap');
+        @keyframes ai-panel-in {
+          from { opacity: 0; transform: translateY(10px) scale(0.97); }
+          to   { opacity: 1; transform: translateY(0)   scale(1);    }
+        }
+        @keyframes ai-fab-in {
+          from { opacity: 0; transform: scale(0.7); }
+          to   { opacity: 1; transform: scale(1);   }
+        }
+        .ai-panel-enter { animation: ai-panel-in 0.22s cubic-bezier(0.16,1,0.3,1) forwards; }
+        .ai-fab-enter   { animation: ai-fab-in   0.2s  cubic-bezier(0.16,1,0.3,1) forwards; }
+        .ai-input-field::placeholder { color: rgba(255,255,255,0.18); }
+      `;
+      document.head.appendChild(style);
+    }
+  }, []);
 
   return (
     <div className="flex flex-col h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
@@ -489,6 +643,214 @@ function StudentViewCourseProgressPage() {
         </div>
       </div>
       
+      {/* Floating AI Tutor — Neural Ink */}
+
+      {/* FAB: shown when panel is closed */}
+      {!aiChatOpen && (
+        <div className="fixed bottom-6 right-6 z-50">
+          <button
+            onClick={() => setAiChatOpen(true)}
+            className="ai-fab-enter group relative flex items-center justify-center"
+            style={{ width: 56, height: 56 }}
+            title="Open AI Tutor"
+          >
+            <span className="absolute inset-0 rounded-full animate-ping"
+              style={{ background: "rgba(16,233,160,0.12)", animationDuration: "2.2s" }} />
+            <span className="absolute inset-1.5 rounded-full"
+              style={{ background: "rgba(16,233,160,0.07)" }} />
+            <span
+              className="relative flex items-center justify-center w-14 h-14 rounded-full transition-all duration-300"
+              style={{
+                background: "rgba(4, 9, 22, 0.96)",
+                border: "1px solid rgba(16,233,160,0.45)",
+                boxShadow: "0 0 18px rgba(16,233,160,0.18), inset 0 1px 0 rgba(255,255,255,0.06)",
+              }}
+              onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 0 32px rgba(16,233,160,0.38), inset 0 1px 0 rgba(255,255,255,0.06)")}
+              onMouseLeave={e => (e.currentTarget.style.boxShadow = "0 0 18px rgba(16,233,160,0.18), inset 0 1px 0 rgba(255,255,255,0.06)")}
+            >
+              <Bot className="w-5 h-5" style={{ color: "#10E9A0" }} />
+            </span>
+          </button>
+        </div>
+      )}
+
+      {/* Full-height chat panel: mirrors sidebar position */}
+      {aiChatOpen && (
+        <div
+          className="ai-panel-enter fixed flex flex-col overflow-hidden"
+          style={{
+            top: 80, right: 0, bottom: 0,
+            width: 420,
+            zIndex: 60,
+            background: "rgba(4, 9, 22, 0.97)",
+            backdropFilter: "blur(28px)",
+            borderLeft: "1px solid rgba(16,233,160,0.14)",
+            boxShadow: "-12px 0 60px rgba(0,0,0,0.6), 0 0 80px rgba(16,233,160,0.04)",
+          }}
+        >
+          {/* Scanline texture */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.009) 2px, rgba(255,255,255,0.009) 4px)",
+              zIndex: 0,
+            }}
+          />
+
+          {/* ── Header ── */}
+          <div
+            className="relative flex items-center justify-between px-5 py-4 flex-shrink-0"
+            style={{ borderBottom: "1px solid rgba(255,255,255,0.055)", zIndex: 1 }}
+          >
+            <div className="flex items-center gap-3">
+              <div
+                className="w-8 h-8 rounded-xl flex items-center justify-center relative flex-shrink-0"
+                style={{ background: "rgba(16,233,160,0.1)", border: "1px solid rgba(16,233,160,0.22)" }}
+              >
+                <Bot className="w-4 h-4" style={{ color: "#10E9A0" }} />
+                <span
+                  className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full"
+                  style={{ background: "#10E9A0", boxShadow: "0 0 6px rgba(16,233,160,0.9)" }}
+                />
+              </div>
+              <div className="flex flex-col leading-none gap-1">
+                <span className="text-white font-semibold tracking-[0.12em] uppercase"
+                  style={{ fontSize: 13, fontFamily: "'Outfit', sans-serif" }}>
+                  AI Tutor
+                </span>
+                <span style={{ fontSize: 10, letterSpacing: "0.1em", color: "rgba(16,233,160,0.45)", fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+                  GEMINI · ONLINE
+                </span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setAiChatOpen(false)}
+              className="flex items-center justify-center rounded-xl transition-all duration-200"
+              style={{ width: 32, height: 32, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.38)" }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.09)"; e.currentTarget.style.color = "#fff"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.color = "rgba(255,255,255,0.38)"; }}
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* ── Messages ── */}
+          <ScrollArea className="flex-1 px-5 py-4" style={{ position: "relative", zIndex: 1 }}>
+            <div className="space-y-6">
+              {aiMessages.map((msg, i) => (
+                <div key={i} className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"}`}>
+                  {msg.role === "assistant" ? (
+                    <div style={{ maxWidth: "96%" }}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Bot className="w-3 h-3 flex-shrink-0" style={{ color: "#10E9A0" }} />
+                        <span style={{ fontSize: 10, letterSpacing: "0.14em", color: "rgba(16,233,160,0.5)", fontFamily: "'JetBrains Mono', ui-monospace, monospace", textTransform: "uppercase" }}>
+                          Tutor
+                        </span>
+                      </div>
+                      <div style={{ borderLeft: "2px solid rgba(16,233,160,0.3)", paddingLeft: 12 }}>
+                        <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                          {msg.content}
+                        </ReactMarkdown>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{
+                      maxWidth: "86%",
+                      fontSize: 14,
+                      lineHeight: 1.65,
+                      padding: "10px 14px",
+                      borderRadius: "16px 16px 2px 16px",
+                      background: "rgba(16,233,160,0.11)",
+                      border: "1px solid rgba(16,233,160,0.2)",
+                      color: "rgba(255,255,255,0.93)",
+                      fontFamily: "'Outfit', sans-serif",
+                    }}>
+                      {msg.content}
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {/* Typing indicator */}
+              {aiLoading && (
+                <div className="flex items-start">
+                  <div className="flex items-center gap-1 pl-3" style={{ borderLeft: "2px solid rgba(16,233,160,0.3)" }}>
+                    {[0, 160, 320].map(delay => (
+                      <span key={delay} className="animate-pulse"
+                        style={{ color: "#10E9A0", fontFamily: "'JetBrains Mono', monospace", fontSize: 18, fontWeight: 700, animationDelay: `${delay}ms`, lineHeight: 1 }}>
+                        —
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div ref={chatBottomRef} />
+            </div>
+          </ScrollArea>
+
+          {/* ── Input ── */}
+          <div
+            className="flex-shrink-0 px-5 pb-5 pt-4"
+            style={{ borderTop: "1px solid rgba(255,255,255,0.055)", position: "relative", zIndex: 1 }}
+          >
+            <div className="flex items-center gap-3">
+              <span className="flex-shrink-0 select-none"
+                style={{ color: "#10E9A0", fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 18, fontWeight: 500, lineHeight: 1, opacity: aiLoading ? 0.35 : 1 }}>
+                ›
+              </span>
+              <input
+                value={aiInput}
+                onChange={e => setAiInput(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && !e.shiftKey && handleAISend()}
+                placeholder="ask anything..."
+                maxLength={1000}
+                disabled={aiLoading}
+                className="ai-input-field flex-1 bg-transparent outline-none disabled:opacity-30"
+                style={{ color: "rgba(255,255,255,0.92)", fontFamily: "'JetBrains Mono', 'Fira Code', ui-monospace, monospace", fontSize: 14, caretColor: "#10E9A0" }}
+              />
+              <button
+                onClick={handleAISend}
+                disabled={!aiInput.trim() || aiLoading}
+                className="flex-shrink-0 flex items-center justify-center rounded-xl transition-all duration-200 disabled:opacity-25"
+                style={{
+                  width: 34, height: 34,
+                  background: aiInput.trim() && !aiLoading ? "rgba(16,233,160,0.14)" : "transparent",
+                  border: "1px solid rgba(16,233,160,0.28)",
+                  color: "#10E9A0",
+                }}
+              >
+                <Send className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* footer: detailed toggle + char counter */}
+            <div className="flex justify-between items-center mt-3">
+              <button
+                onClick={() => setDetailedMode(d => !d)}
+                title={detailedMode ? "Switch to concise mode" : "Switch to detailed mode"}
+                style={{
+                  display: "flex", alignItems: "center", gap: 6,
+                  padding: "3px 10px", borderRadius: 20,
+                  border: detailedMode ? "1px solid rgba(16,233,160,0.45)" : "1px solid rgba(255,255,255,0.1)",
+                  background: detailedMode ? "rgba(16,233,160,0.1)" : "transparent",
+                  cursor: "pointer", transition: "all 0.2s",
+                }}
+              >
+                <span style={{ width: 7, height: 7, borderRadius: "50%", flexShrink: 0, background: detailedMode ? "#10E9A0" : "rgba(255,255,255,0.2)", boxShadow: detailedMode ? "0 0 5px rgba(16,233,160,0.7)" : "none", transition: "all 0.2s" }} />
+                <span style={{ fontSize: 10, letterSpacing: "0.1em", color: detailedMode ? "#10E9A0" : "rgba(255,255,255,0.25)", fontFamily: "'JetBrains Mono', ui-monospace, monospace", transition: "color 0.2s" }}>
+                  {detailedMode ? "DETAILED" : "BRIEF"}
+                </span>
+              </button>
+              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.15)", fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+                {aiInput.length}/1000
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Enhanced Not Purchased Dialog */}
       <Dialog open={lockCourse}>
         <DialogContent className="sm:w-[425px] bg-gradient-to-br from-red-900/20 to-orange-900/20 border-red-500/30">

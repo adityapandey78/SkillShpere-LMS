@@ -187,3 +187,76 @@ export async function unenrollCourseService(studentId, courseId) {
 
   return data;
 }
+
+// Streams AI tutor reply via Server-Sent Events. We use native fetch (not axios)
+// because axios does not expose ReadableStream cleanly in browsers. The optional
+// onChunk callback fires for every text chunk as it arrives, giving the UI a
+// ChatGPT-style word-by-word render. Resolves once the stream completes with the
+// full assembled reply (same response shape the non-streaming version returned).
+export async function askAITutorService(courseId, message, history, detailed = false, onChunk) {
+  const baseURL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  const token = JSON.parse(sessionStorage.getItem("accessToken")) || "";
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 60000);
+
+  try {
+    const res = await fetch(`${baseURL}/ai/chat`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      credentials: "include",
+      body: JSON.stringify({ courseId, message, history, detailed }),
+      signal: controller.signal,
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data?.message || `Request failed (${res.status})`);
+    }
+    if (!res.body) {
+      throw new Error("Streaming not supported in this browser.");
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let fullText = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      // SSE events are separated by a blank line; keep the trailing partial chunk in the buffer
+      const blocks = buffer.split("\n\n");
+      buffer = blocks.pop() || "";
+
+      for (const block of blocks) {
+        const line = block.trim();
+        if (!line.startsWith("data:")) continue;
+        const payload = line.slice(5).trim();
+        if (!payload) continue;
+
+        let evt;
+        try {
+          evt = JSON.parse(payload);
+        } catch {
+          continue;
+        }
+
+        if (evt.error) throw new Error(evt.error);
+        if (evt.chunk) {
+          fullText += evt.chunk;
+          onChunk?.(evt.chunk);
+        }
+      }
+    }
+
+    return { success: true, data: { reply: fullText } };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
