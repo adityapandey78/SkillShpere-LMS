@@ -49,6 +49,7 @@ function CourseCurriculum() {
   } = useContext(InstructorContext);
 
   const bulkUploadInputRef = useRef(null);
+  const lectureListRef = useRef(null);
 
   // Tracks which YouTube URL fields the user has interacted with
   const [urlTouched, setUrlTouched] = useState({});
@@ -82,6 +83,11 @@ function CourseCurriculum() {
       ...courseCurriculumFormData,
       { ...courseCurriculumInitialFormData[0] },
     ]);
+    // Scroll the lecture list to the bottom so the new card is visible
+    setTimeout(() => {
+      const el = lectureListRef.current;
+      if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    }, 80);
   }
 
   function handleCourseTitleChange(event, currentIndex) {
@@ -342,8 +348,9 @@ function CourseCurriculum() {
       </Dialog>
 
       {/* ── Main Card ──────────────────────────────────────────────────── */}
-      <Card className="border-0 shadow-lg">
-        <CardHeader className="flex flex-row items-center justify-between bg-gradient-to-r from-green-50 to-teal-50 border-b">
+      <Card className="border-0 shadow-lg flex flex-col">
+        {/* Sticky header: stays visible while lecture list scrolls */}
+        <CardHeader className="sticky top-0 z-10 flex flex-row items-center justify-between bg-gradient-to-r from-green-50 to-teal-50 border-b rounded-t-lg">
           <div>
             <CardTitle className="text-2xl font-bold text-gray-900 flex items-center gap-3">
               <div className="h-10 w-10 rounded-full bg-green-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
@@ -374,22 +381,30 @@ function CourseCurriculum() {
           </Button>
         </CardHeader>
 
-        <CardContent className="pt-6">
-          <Button
-            disabled={!isCourseCurriculumFormDataValid() || mediaUploadProgress}
-            onClick={handleNewLecture}
-          >
-            + Add Lecture
-          </Button>
-
-          {mediaUploadProgress && (
-            <div className="mt-4">
-              <MediaProgressbar isMediaUploading={mediaUploadProgress} />
+        <CardContent className="pt-4 flex flex-col min-h-0">
+          {/* Sticky Add Lecture bar — stays above the scrollable lecture list */}
+          <div className="sticky top-[88px] z-10 bg-white pb-3 pt-1 border-b border-gray-100">
+            <div className="flex items-center gap-4">
+              <Button
+                disabled={!isCourseCurriculumFormDataValid() || mediaUploadProgress}
+                onClick={handleNewLecture}
+              >
+                + Add Lecture
+              </Button>
+              {mediaUploadProgress && (
+                <div className="flex-1">
+                  <MediaProgressbar isMediaUploading={mediaUploadProgress} />
+                </div>
+              )}
             </div>
-          )}
+          </div>
 
-          {/* ── Lecture list ─────────────────────────────────────────── */}
-          <div className="mt-5 space-y-4">
+          {/* ── Scrollable lecture list ───────────────────────────────── */}
+          <div
+            ref={lectureListRef}
+            className="mt-4 space-y-4 overflow-y-auto pr-1"
+            style={{ maxHeight: "60vh" }}
+          >
             {courseCurriculumFormData.length === 0 && (
               <div className="text-center py-16 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
                 <div className="h-14 w-14 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">

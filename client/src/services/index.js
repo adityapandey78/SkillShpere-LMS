@@ -188,6 +188,16 @@ export async function unenrollCourseService(studentId, courseId) {
   return data;
 }
 
+export const generateCourseOutlineService = async (topic, level, targetAudience, syllabus) => {
+  const { data } = await axiosInstance.post("/ai/generate-outline", { topic, level, targetAudience, syllabus });
+  return data;
+};
+
+export const regenerateCourseFieldService = async (fieldName, courseContext, instruction) => {
+  const { data } = await axiosInstance.post("/ai/regenerate-field", { fieldName, courseContext, instruction });
+  return data;
+};
+
 // Streams AI tutor reply via Server-Sent Events. We use native fetch (not axios)
 // because axios does not expose ReadableStream cleanly in browsers. The optional
 // onChunk callback fires for every text chunk as it arrives, giving the UI a
