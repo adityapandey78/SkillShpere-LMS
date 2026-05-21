@@ -41,30 +41,32 @@ import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import Confetti from "react-confetti";
 import { useNavigate, useParams } from "react-router-dom";
 
+const WRAP = { wordBreak: "break-word", overflowWrap: "break-word" };
+
 // Styled ReactMarkdown component map — matches Neural Ink dark theme
 const markdownComponents = {
   h1: ({ children }) => (
-    <p style={{ color: "#10E9A0", fontSize: 15, fontWeight: 700, marginBottom: 6, marginTop: 10, fontFamily: "'Outfit', sans-serif", letterSpacing: "0.03em" }}>{children}</p>
+    <p style={{ color: "#10E9A0", fontSize: 15, fontWeight: 700, marginBottom: 6, marginTop: 10, fontFamily: "'Outfit', sans-serif", letterSpacing: "0.03em", ...WRAP }}>{children}</p>
   ),
   h2: ({ children }) => (
-    <p style={{ color: "#10E9A0", fontSize: 14, fontWeight: 600, marginBottom: 5, marginTop: 10, fontFamily: "'Outfit', sans-serif" }}>{children}</p>
+    <p style={{ color: "#10E9A0", fontSize: 14, fontWeight: 600, marginBottom: 5, marginTop: 10, fontFamily: "'Outfit', sans-serif", ...WRAP }}>{children}</p>
   ),
   h3: ({ children }) => (
-    <p style={{ color: "rgba(16,233,160,0.75)", fontSize: 13.5, fontWeight: 600, marginBottom: 4, marginTop: 8, fontFamily: "'Outfit', sans-serif" }}>{children}</p>
+    <p style={{ color: "rgba(16,233,160,0.75)", fontSize: 13.5, fontWeight: 600, marginBottom: 4, marginTop: 8, fontFamily: "'Outfit', sans-serif", ...WRAP }}>{children}</p>
   ),
   p: ({ children }) => (
-    <p style={{ color: "rgba(210,215,235,0.9)", fontSize: 13, lineHeight: 1.75, marginBottom: 6, fontFamily: "'Outfit', sans-serif" }}>{children}</p>
+    <p style={{ color: "rgba(210,215,235,0.9)", fontSize: 13, lineHeight: 1.75, marginBottom: 6, fontFamily: "'Outfit', sans-serif", ...WRAP }}>{children}</p>
   ),
   ul: ({ children }) => (
     <ul style={{ listStyle: "none", padding: 0, margin: "4px 0 8px" }}>{children}</ul>
   ),
   ol: ({ children }) => (
-    <ol style={{ paddingLeft: 18, margin: "4px 0 8px", color: "rgba(210,215,235,0.9)", fontSize: 13, fontFamily: "'Outfit', sans-serif" }}>{children}</ol>
+    <ol style={{ paddingLeft: 18, margin: "4px 0 8px", color: "rgba(210,215,235,0.9)", fontSize: 13, fontFamily: "'Outfit', sans-serif", ...WRAP }}>{children}</ol>
   ),
   li: ({ children }) => (
     <li style={{ display: "flex", gap: 7, marginBottom: 4, alignItems: "flex-start" }}>
       <span style={{ color: "#10E9A0", flexShrink: 0, marginTop: 2, fontFamily: "monospace", fontWeight: 700, fontSize: 14 }}>›</span>
-      <span style={{ color: "rgba(210,215,235,0.9)", fontSize: 13, lineHeight: 1.7, fontFamily: "'Outfit', sans-serif" }}>{children}</span>
+      <span style={{ color: "rgba(210,215,235,0.9)", fontSize: 13, lineHeight: 1.7, fontFamily: "'Outfit', sans-serif", ...WRAP }}>{children}</span>
     </li>
   ),
   code: ({ className, children }) => {
@@ -72,7 +74,7 @@ const markdownComponents = {
     return isBlock ? (
       <code style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 12, color: "rgba(210,215,235,0.85)" }}>{children}</code>
     ) : (
-      <code style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 12, color: "#10E9A0", background: "rgba(16,233,160,0.1)", border: "1px solid rgba(16,233,160,0.2)", borderRadius: 4, padding: "0 5px" }}>{children}</code>
+      <code style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 12, color: "#10E9A0", background: "rgba(16,233,160,0.1)", border: "1px solid rgba(16,233,160,0.2)", borderRadius: 4, padding: "0 5px", ...WRAP }}>{children}</code>
     );
   },
   pre: ({ children }) => (
@@ -85,10 +87,31 @@ const markdownComponents = {
     <em style={{ color: "rgba(210,215,235,0.65)" }}>{children}</em>
   ),
   blockquote: ({ children }) => (
-    <blockquote style={{ borderLeft: "2px solid rgba(16,233,160,0.35)", paddingLeft: 12, margin: "8px 0", color: "rgba(210,215,235,0.65)", fontStyle: "italic", fontFamily: "'Outfit', sans-serif", fontSize: 13 }}>{children}</blockquote>
+    <blockquote style={{ borderLeft: "2px solid rgba(16,233,160,0.35)", paddingLeft: 12, margin: "8px 0", color: "rgba(210,215,235,0.65)", fontStyle: "italic", fontFamily: "'Outfit', sans-serif", fontSize: 13, ...WRAP }}>{children}</blockquote>
   ),
   hr: () => (
     <hr style={{ border: "none", borderTop: "1px solid rgba(255,255,255,0.08)", margin: "10px 0" }} />
+  ),
+  // Scrollable table with styled cells
+  table: ({ children }) => (
+    <div style={{ overflowX: "auto", margin: "10px 0", borderRadius: 8, border: "1px solid rgba(255,255,255,0.08)" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "'Outfit', sans-serif", fontSize: 12.5, minWidth: 280 }}>
+        {children}
+      </table>
+    </div>
+  ),
+  thead: ({ children }) => (
+    <thead style={{ background: "rgba(16,233,160,0.07)", borderBottom: "1px solid rgba(16,233,160,0.18)" }}>{children}</thead>
+  ),
+  tbody: ({ children }) => <tbody>{children}</tbody>,
+  tr: ({ children }) => (
+    <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>{children}</tr>
+  ),
+  th: ({ children }) => (
+    <th style={{ padding: "8px 12px", textAlign: "left", color: "#10E9A0", fontWeight: 600, fontSize: 12, letterSpacing: "0.04em", whiteSpace: "nowrap" }}>{children}</th>
+  ),
+  td: ({ children }) => (
+    <td style={{ padding: "7px 12px", color: "rgba(210,215,235,0.85)", fontSize: 12.5, borderRight: "1px solid rgba(255,255,255,0.04)", ...WRAP }}>{children}</td>
   ),
 };
 
@@ -113,7 +136,11 @@ function StudentViewCourseProgressPage() {
   const [aiInput, setAiInput] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
   const [detailedMode, setDetailedMode] = useState(false);
+  const [aiPanelWidth, setAiPanelWidth] = useState(420);
   const chatBottomRef = useRef(null);
+  const isResizingRef = useRef(false);
+  const resizeStartXRef = useRef(0);
+  const resizeStartWidthRef = useRef(420);
   const { id } = useParams();
 
   // Stable refs so async callbacks always read the latest values without
@@ -337,6 +364,37 @@ function StudentViewCourseProgressPage() {
     }
   }
 
+  // Drag-to-resize the AI panel from its left edge
+  useEffect(() => {
+    const onMouseMove = (e) => {
+      if (!isResizingRef.current) return;
+      const delta = resizeStartXRef.current - e.clientX;
+      const next = Math.min(700, Math.max(300, resizeStartWidthRef.current + delta));
+      setAiPanelWidth(next);
+    };
+    const onMouseUp = () => {
+      if (!isResizingRef.current) return;
+      isResizingRef.current = false;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }, []);
+
+  const startResize = (e) => {
+    e.preventDefault();
+    isResizingRef.current = true;
+    resizeStartXRef.current = e.clientX;
+    resizeStartWidthRef.current = aiPanelWidth;
+    document.body.style.cursor = "ew-resize";
+    document.body.style.userSelect = "none";
+  };
+
   // On first load: fetch progress AND advance to the first unviewed lecture
   useEffect(() => {
     fetchCurrentCourseProgress(true);
@@ -428,7 +486,7 @@ function StudentViewCourseProgressPage() {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Main Video Content */}
-        <div className={`flex-1 ${isSideBarOpen ? "mr-[420px]" : ""} transition-all duration-300`}>
+        <div className="flex-1 transition-all duration-300" style={{ marginRight: aiChatOpen ? aiPanelWidth : (isSideBarOpen ? 420 : 0) }}>
           {/* Video Player Container */}
           <div className="relative bg-black">
             <VideoPlayer
@@ -680,7 +738,7 @@ function StudentViewCourseProgressPage() {
           className="ai-panel-enter fixed flex flex-col overflow-hidden"
           style={{
             top: 80, right: 0, bottom: 0,
-            width: 420,
+            width: aiPanelWidth,
             zIndex: 60,
             background: "rgba(4, 9, 22, 0.97)",
             backdropFilter: "blur(28px)",
@@ -695,6 +753,18 @@ function StudentViewCourseProgressPage() {
               backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.009) 2px, rgba(255,255,255,0.009) 4px)",
               zIndex: 0,
             }}
+          />
+
+          {/* Resize handle — drag left edge to resize panel */}
+          <div
+            onMouseDown={startResize}
+            style={{
+              position: "absolute", top: 0, left: 0, bottom: 0, width: 6,
+              cursor: "ew-resize", zIndex: 10,
+              background: "transparent",
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = "rgba(16,233,160,0.12)")}
+            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
           />
 
           {/* ── Header ── */}
@@ -741,14 +811,14 @@ function StudentViewCourseProgressPage() {
               {aiMessages.map((msg, i) => (
                 <div key={i} className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"}`}>
                   {msg.role === "assistant" ? (
-                    <div style={{ maxWidth: "96%" }}>
+                    <div style={{ width: "100%", minWidth: 0 }}>
                       <div className="flex items-center gap-2 mb-2">
                         <Bot className="w-3 h-3 flex-shrink-0" style={{ color: "#10E9A0" }} />
                         <span style={{ fontSize: 10, letterSpacing: "0.14em", color: "rgba(16,233,160,0.5)", fontFamily: "'JetBrains Mono', ui-monospace, monospace", textTransform: "uppercase" }}>
                           Tutor
                         </span>
                       </div>
-                      <div style={{ borderLeft: "2px solid rgba(16,233,160,0.3)", paddingLeft: 12 }}>
+                      <div style={{ borderLeft: "2px solid rgba(16,233,160,0.3)", paddingLeft: 12, minWidth: 0, overflow: "hidden" }}>
                         <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
                           {msg.content}
                         </ReactMarkdown>
@@ -765,6 +835,8 @@ function StudentViewCourseProgressPage() {
                       border: "1px solid rgba(16,233,160,0.2)",
                       color: "rgba(255,255,255,0.93)",
                       fontFamily: "'Outfit', sans-serif",
+                      wordBreak: "break-word",
+                      overflowWrap: "break-word",
                     }}>
                       {msg.content}
                     </div>
