@@ -62,22 +62,32 @@ const generateOutline = async (req, res) => {
       }
     }
 
+    // Convert objectives array to string if needed
+    const objectivesStr = Array.isArray(outline.objectives)
+      ? outline.objectives.join("\n")
+      : outline.objectives || "";
+
     res.status(200).json({
       success: true,
       data: {
         title: (outline.title || "").slice(0, 60),
         subtitle: (outline.subtitle || "").slice(0, 120),
         description: outline.description || "",
-        objectives: outline.objectives || "",
+        objectives: objectivesStr,
         welcomeMessage: outline.welcomeMessage || "",
         flatLectures,
         fullCurriculum: outline.curriculum,
       },
     });
   } catch (error) {
-    console.log(error);
     if (error.status === 429 || error?.message?.includes("RESOURCE_EXHAUSTED")) {
+      console.error("AI quota exceeded:", error.message || error.status);
       return res.status(429).json({ success: false, message: "AI is busy. Please try again in a moment." });
+    }
+    if (error instanceof SyntaxError) {
+      console.error("JSON parse error in outline:", error.message);
+    } else {
+      console.error("Outline generation error:", error.message || error);
     }
     res.status(500).json({ success: false, message: "Failed to generate outline. Please try again." });
   }
@@ -103,10 +113,11 @@ const regenerateField = async (req, res) => {
       data: { fieldName, value },
     });
   } catch (error) {
-    console.log(error);
     if (error.status === 429 || error?.message?.includes("RESOURCE_EXHAUSTED")) {
+      console.error("Field regeneration quota exceeded:", error.message || error.status);
       return res.status(429).json({ success: false, message: "AI is busy. Please try again in a moment." });
     }
+    console.error("Field regeneration error:", error.message || error);
     res.status(500).json({ success: false, message: "Failed to regenerate field. Please try again." });
   }
 };

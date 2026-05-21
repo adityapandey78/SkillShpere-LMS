@@ -54,16 +54,17 @@ const askAITutor = async (req, res) => {
       send({ done: true });
       res.end();
     } catch (err) {
-      console.log("Streaming error:", err);
       if (err.status === 429 || err?.message?.includes("RESOURCE_EXHAUSTED")) {
+        console.error("Chat AI quota exceeded:", err.message || err.status);
         send({ error: "AI is rate-limited — wait a moment and try again." });
       } else {
+        console.error("Chat streaming error:", err.message || err);
         send({ error: "AI service error. Please try again." });
       }
       res.end();
     }
   } catch (error) {
-    console.log(error);
+    console.error("Chat controller error:", error.message || error);
     if (!res.headersSent) {
       return res.status(500).json({ success: false, message: "AI service error. Please try again." });
     }
