@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { InstructorContext } from "@/context/instructor-context";
 import { mediaUploadService } from "@/services";
 import { useContext, useRef } from "react";
-import { X, Upload, ImageIcon } from "lucide-react";
+import { X, Upload, ImageIcon, Image } from "lucide-react";
 
 const DEFAULT_THUMBNAIL = "/images/default_thumbnail.jpg";
 
@@ -55,11 +55,14 @@ function CourseSettings() {
   return (
     <Card className="border-0 shadow-lg">
       <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 border-b">
-        <CardTitle className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <div className="h-10 w-10 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold">
-            3
+        <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-purple-600 flex items-center justify-center text-white flex-shrink-0 shadow-sm">
+            <Image className="w-5 h-5" />
           </div>
-          Course Settings
+          <div>
+            <div className="text-[10px] font-semibold uppercase tracking-widest text-purple-500 mb-0.5">Step 3</div>
+            Thumbnail
+          </div>
         </CardTitle>
       </CardHeader>
 

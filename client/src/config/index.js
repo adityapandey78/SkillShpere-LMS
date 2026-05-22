@@ -172,6 +172,7 @@ export const courseLandingInitialFormData = {
   pricing: "",
   objectives: "",
   welcomeMessage: "",
+  syllabus: "",
   image: "",
 };
 

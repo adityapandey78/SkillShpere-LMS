@@ -5,7 +5,8 @@ import { courseCategories, courseLevelOptions, languageOptions } from "@/config"
 import { InstructorContext } from "@/context/instructor-context";
 import { generateCourseOutlineService, regenerateCourseFieldService } from "@/services";
 import { useContext, useState, useEffect } from "react";
-import { Sparkles, Wand2, Loader2, AlertCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Sparkles, Wand2, Loader2, AlertCircle, ClipboardList } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const REQUIRED_FIELDS = {
@@ -31,9 +32,9 @@ function CourseLanding() {
   const {
     courseLandingFormData,
     setCourseLandingFormData,
-    courseCurriculumFormData,
-    setCourseCurriculumFormData,
   } = useContext(InstructorContext);
+
+  const { toast } = useToast();
 
   const [errors, setErrors] = useState({});
   const [touchedFields, setTouchedFields] = useState({});
@@ -49,8 +50,6 @@ function CourseLanding() {
   const [aiInstruction, setAiInstruction] = useState("");
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiError, setAiError] = useState("");
-
-  const hasYoutubeLectures = courseCurriculumFormData?.some(l => l.videoType === "youtube");
 
   // ── Validation ─────────────────────────────────────────────────────────────
 
@@ -82,6 +81,9 @@ function CourseLanding() {
   function openAiDialog(mode) {
     setAiMode(mode);
     setAiError("");
+    if (mode === "all" && !aiTopic && courseLandingFormData.title) {
+      setAiTopic(courseLandingFormData.title);
+    }
     setAiDialogOpen(true);
   }
 
@@ -102,11 +104,12 @@ function CourseLanding() {
             objectives: d.objectives || prev.objectives,
             welcomeMessage: d.welcomeMessage || prev.welcomeMessage,
           }));
-          if (d.flatLectures?.length > 0) setCourseCurriculumFormData(d.flatLectures);
+          // Intentionally NOT auto-populating curriculum — instructor adds lectures manually
           setAiDialogOpen(false);
           setAiTopic("");
           setAiAudience("");
           setAiSyllabus("");
+          toast({ title: "Outline generated!", description: "Course details have been filled in. Review and edit as needed." });
         } else {
           setAiError(res?.message || "Failed to generate. Please try again.");
         }
@@ -122,6 +125,7 @@ function CourseLanding() {
           setCourseLandingFormData(prev => ({ ...prev, [aiTargetField]: res.data.value }));
           setAiDialogOpen(false);
           setAiInstruction("");
+          toast({ title: "Field updated!", description: `${FIELD_OPTIONS.find(f => f.value === aiTargetField)?.label} has been regenerated.` });
         } else {
           setAiError(res?.message || "Failed to regenerate. Please try again.");
         }
@@ -155,13 +159,16 @@ function CourseLanding() {
     <Card className="border-0 shadow-lg">
       <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b px-6 py-5">
         <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-3">
-          <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-            2
+          <div className="h-10 w-10 rounded-xl bg-blue-600 flex items-center justify-center text-white flex-shrink-0 shadow-sm">
+            <ClipboardList className="w-5 h-5" />
           </div>
-          Course Landing Page
+          <div>
+            <div className="text-[10px] font-semibold uppercase tracking-widest text-blue-500 mb-0.5">Step 1</div>
+            Course Overview
+          </div>
         </CardTitle>
-        <CardDescription className="text-gray-500 mt-1 ml-11">
-          Provide essential information about your course to attract students.
+        <CardDescription className="text-gray-500 mt-1 ml-[52px]">
+          Set the title, description, pricing and learning objectives.
         </CardDescription>
       </CardHeader>
 
@@ -421,6 +428,7 @@ function CourseLanding() {
               className={cn(inputCls("welcomeMessage"), "resize-none leading-relaxed")}
             />
           </div>
+
         </div>
       </CardContent>
 
@@ -508,26 +516,22 @@ function CourseLanding() {
                   </div>
                 </div>
 
-                {hasYoutubeLectures && (
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                      Syllabus
-                      <span className="text-xs font-normal text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
-                        Recommended — you have YouTube lectures
-                      </span>
-                    </label>
-                    <textarea
-                      value={aiSyllabus}
-                      onChange={e => setAiSyllabus(e.target.value)}
-                      rows={4}
-                      placeholder="Paste or type your syllabus here. The AI will use it to match lecture titles to your YouTube content."
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm resize-none focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 leading-relaxed"
-                    />
-                    <p className="text-xs text-gray-400">
-                      Helps AI generate lecture titles that align with your actual YouTube videos.
-                    </p>
-                  </div>
-                )}
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-gray-700">
+                    Syllabus / Course Notes{" "}
+                    <span className="text-xs font-normal text-gray-400">(optional)</span>
+                  </label>
+                  <textarea
+                    value={aiSyllabus}
+                    onChange={e => setAiSyllabus(e.target.value)}
+                    rows={4}
+                    placeholder={"Paste your course outline or topics here...\n\nExample:\n- Week 1: Introduction\n- Week 2: Core concepts\n- Week 3: Advanced topics"}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm resize-none focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 leading-relaxed"
+                  />
+                  <p className="text-xs text-gray-400">
+                    Helps the AI match descriptions and objectives to your actual course content.
+                  </p>
+                </div>
               </>
             ) : (
               <>

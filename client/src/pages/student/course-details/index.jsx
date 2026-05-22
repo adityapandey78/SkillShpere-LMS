@@ -19,19 +19,21 @@ import {
   enrollInFreeCourseService,
   fetchStudentViewCourseDetailsService,
 } from "@/services";
-import { 
-  CheckCircle, 
-  Globe, 
-  Lock, 
-  PlayCircle, 
-  Users, 
+import {
+  CheckCircle,
+  Globe,
+  Lock,
+  PlayCircle,
+  Users,
   Calendar,
   Clock,
   Star,
   ArrowLeft,
   BookOpen,
   Award,
-  Zap
+  Zap,
+  MessageSquare,
+  Target
 } from "lucide-react";
 import { useContext, useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
@@ -201,10 +203,37 @@ function StudentViewCourseDetailsPage() {
 
   const getIndexOfFreePreviewUrl =
     studentViewCourseDetails !== null
-      ? studentViewCourseDetails?.curriculum?.findIndex(
-          (item) => item.freePreview
-        )
+      ? studentViewCourseDetails?.curriculum?.findIndex((item) => item.freePreview)
       : -1;
+
+  // Parses a text field that may contain newlines, bullet markers (•-*), or commas
+  function parseBulletPoints(text) {
+    if (!text) return [];
+    const byNewline = text.split(/\n/).map(l => l.trim()).filter(Boolean);
+    if (byNewline.length > 1) {
+      return byNewline.map(l => l.replace(/^[-•*]\s*/, "").trim()).filter(Boolean);
+    }
+    // Fall back to comma splitting for single-line entries
+    return text.split(",").map(l => l.trim()).filter(Boolean);
+  }
+
+  // Render a text block respecting newlines and inline bullet markers
+  function renderTextBlock(text) {
+    if (!text) return null;
+    return text.split(/\n/).map((line, i) => {
+      const trimmed = line.trim();
+      if (!trimmed) return null;
+      const isBullet = /^[-•*]\s/.test(trimmed);
+      return isBullet ? (
+        <li key={i} className="flex items-start gap-2 text-gray-700">
+          <CheckCircle className="h-4 w-4 text-blue-500 flex-shrink-0 mt-0.5" />
+          <span>{trimmed.replace(/^[-•*]\s*/, "")}</span>
+        </li>
+      ) : (
+        <p key={i} className="text-gray-700 leading-relaxed">{trimmed}</p>
+      );
+    }).filter(Boolean);
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -311,43 +340,60 @@ function StudentViewCourseDetailsPage() {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
             {/* What you'll learn */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                  What you&apos;ll learn
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {studentViewCourseDetails?.objectives
-                    .split(",")
-                    .map((objective, index) => (
-                      <li key={index} className="flex items-start gap-3">
+            {studentViewCourseDetails?.objectives && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Target className="h-5 w-5 text-green-600" />
+                    What you&apos;ll learn
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="flex flex-col gap-2.5">
+                    {parseBulletPoints(studentViewCourseDetails.objectives).map((obj, i) => (
+                      <li key={i} className="flex items-start gap-3">
                         <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                        <span className="text-gray-700">{objective.trim()}</span>
+                        <span className="text-gray-700">{obj}</span>
                       </li>
                     ))}
-                </ul>
-              </CardContent>
-            </Card>
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Course Description */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BookOpen className="h-5 w-5 text-blue-600" />
-                  Course Description
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="prose prose-gray max-w-none">
-                  <p className="text-gray-700 leading-relaxed">
-                    {studentViewCourseDetails?.description}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            {studentViewCourseDetails?.description && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BookOpen className="h-5 w-5 text-blue-600" />
+                    Course Description
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {renderTextBlock(studentViewCourseDetails.description)}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Welcome Message */}
+            {studentViewCourseDetails?.welcomeMessage && (
+              <Card className="border-blue-100 bg-blue-50/40">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MessageSquare className="h-5 w-5 text-blue-500" />
+                    A message from your instructor
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 italic text-gray-600">
+                    {renderTextBlock(studentViewCourseDetails.welcomeMessage)}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Course Curriculum */}
             <Card>

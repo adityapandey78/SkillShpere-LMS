@@ -101,7 +101,8 @@ const regenerateField = async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid field name." });
     }
 
-    const model = getModel({ maxOutputTokens: 400 });
+    // 1200 tokens avoids truncation for long fields like description (800 chars) and objectives (600 chars)
+    const model = getModel({ maxOutputTokens: 1200 });
     const result = await model.generateContent(
       AI_PROMPTS.outlineField(fieldName, FIELD_LABELS[fieldName], courseContext, instruction.slice(0, 200))
     );

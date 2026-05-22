@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import {
   AlertCircle,
   CheckCircle2,
+  Film,
   RefreshCw,
   Trash2,
   Upload,
@@ -352,14 +353,17 @@ function CourseCurriculum() {
         {/* Sticky header: stays visible while lecture list scrolls */}
         <CardHeader className="sticky top-0 z-10 flex flex-row items-center justify-between bg-gradient-to-r from-green-50 to-teal-50 border-b rounded-t-lg">
           <div>
-            <CardTitle className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-green-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                1
+            <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-green-600 flex items-center justify-center text-white flex-shrink-0 shadow-sm">
+                <Film className="w-5 h-5" />
               </div>
-              Create Course Curriculum
+              <div>
+                <div className="text-[10px] font-semibold uppercase tracking-widest text-green-600 mb-0.5">Step 2</div>
+                Curriculum
+              </div>
             </CardTitle>
-            <p className="text-gray-500 text-sm mt-1 ml-13">
-              Add lectures and organize your course content
+            <p className="text-gray-500 text-sm mt-1 ml-[52px]">
+              Add lectures with uploaded videos or YouTube links
             </p>
           </div>
           <Input

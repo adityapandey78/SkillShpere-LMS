@@ -184,19 +184,19 @@ function AddNewCoursePage() {
       <Card className="border-0 shadow-xl bg-white">
         <CardContent className="p-6">
           <div className="w-full">
-            <Tabs defaultValue="curriculum" className="space-y-6">
+            <Tabs defaultValue="course-landing-page" className="space-y-6">
               <TabsList className="grid w-full grid-cols-3 bg-gray-100 p-1 rounded-lg">
+                <TabsTrigger
+                  value="course-landing-page"
+                  className="data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm rounded-md font-semibold transition-all"
+                >
+                  Course Overview
+                </TabsTrigger>
                 <TabsTrigger
                   value="curriculum"
                   className="data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm rounded-md font-semibold transition-all"
                 >
                   Curriculum
-                </TabsTrigger>
-                <TabsTrigger
-                  value="course-landing-page"
-                  className="data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm rounded-md font-semibold transition-all"
-                >
-                  Course Landing Page
                 </TabsTrigger>
                 <TabsTrigger
                   value="settings"
@@ -205,11 +205,11 @@ function AddNewCoursePage() {
                   Settings
                 </TabsTrigger>
               </TabsList>
-              <TabsContent value="curriculum">
-                <CourseCurriculum />
-              </TabsContent>
               <TabsContent value="course-landing-page">
                 <CourseLanding />
+              </TabsContent>
+              <TabsContent value="curriculum">
+                <CourseCurriculum />
               </TabsContent>
               <TabsContent value="settings">
                 <CourseSettings />
