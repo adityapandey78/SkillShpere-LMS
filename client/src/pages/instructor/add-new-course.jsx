@@ -14,6 +14,8 @@ import {
   addNewCourseService,
   fetchInstructorCourseDetailsService,
   updateCourseByIdService,
+  saveQuizService,
+  getQuizByCourseService,
 } from "@/services";
 import { cn } from "@/lib/utils";
 import { useContext, useEffect, useRef } from "react";
@@ -29,6 +31,10 @@ function AddNewCoursePage() {
     setCourseCurriculumFormData,
     currentEditedCourseId,
     setCurrentEditedCourseId,
+    quizConfig,
+    setQuizConfig,
+    quizGroups,
+    setQuizGroups,
   } = useContext(InstructorContext);
 
   const { auth } = useContext(AuthContext);
@@ -108,8 +114,20 @@ function AddNewCoursePage() {
           : await addNewCourseService(courseFinalFormData);
 
       if (response?.success) {
+        // Save quiz if instructor generated one
+        const courseId = response?.data?._id || currentEditedCourseId;
+        if (courseId && quizConfig.enabled && quizGroups.length > 0) {
+          try {
+            await saveQuizService(courseId, quizConfig, quizGroups);
+          } catch (quizErr) {
+            console.error("Failed to save quiz (course saved successfully):", quizErr);
+          }
+        }
+
         setCourseLandingFormData(courseLandingInitialFormData);
         setCourseCurriculumFormData(courseCurriculumInitialFormData);
+        setQuizConfig({ enabled: false, mode: "end", lectureInterval: 2, questionCount: 10, difficulty: { easy: 30, medium: 50, hard: 20 } });
+        setQuizGroups([]);
         originalDataRef.current = null;
         navigate(-1);
         setCurrentEditedCourseId(null);
@@ -130,6 +148,18 @@ function AddNewCoursePage() {
 
       setCourseLandingFormData(setCourseFormData);
       setCourseCurriculumFormData(response?.data?.curriculum);
+
+      // Load quiz if one exists for this course
+      try {
+        const quizResponse = await getQuizByCourseService(currentEditedCourseId);
+        if (quizResponse?.success && quizResponse?.data) {
+          const saved = quizResponse.data;
+          setQuizConfig({ ...saved.config, enabled: true });
+          setQuizGroups(saved.groups || []);
+        }
+      } catch (quizErr) {
+        console.error("Could not load quiz:", quizErr);
+      }
 
       // Store a deep-clone snapshot so hasChanges() can compare against it
       originalDataRef.current = {

@@ -42,6 +42,47 @@ const AI_PROMPTS = {
     );
   },
 
+  quiz: (courseTitle, courseDescription, objectives, lectureGroups, { questionCount, easy, medium, hard }) => {
+    const easyCount = Math.round(questionCount * easy / 100);
+    const hardCount = Math.round(questionCount * hard / 100);
+    const mediumCount = questionCount - easyCount - hardCount;
+
+    const groupsDescription = lectureGroups
+      .map((g, i) => `  Group ${i + 1}: Covers lectures — ${g.lectureNames.join(", ")}`)
+      .join("\n");
+
+    return (
+      `You are an expert quiz creator for online courses.\n\n` +
+      `Course: "${courseTitle}"\n` +
+      `Description: ${courseDescription || "Not provided"}\n` +
+      `Learning objectives: ${objectives || "Not specified"}\n\n` +
+      `IMPORTANT: Generate questions STRICTLY based on the lecture topics listed below. ` +
+      `Each question must be directly answerable from what students learn in those specific lectures. ` +
+      `Do NOT include questions about topics not covered in the given lecture titles.\n\n` +
+      `Lecture groups to generate quizzes for:\n${groupsDescription}\n\n` +
+      `For EACH group, create exactly ${questionCount} multiple-choice questions.\n` +
+      `Difficulty: ${easyCount} Easy, ${mediumCount} Medium, ${hardCount} Hard.\n\n` +
+      `Return ONLY valid JSON — an array with one object per group:\n` +
+      `[\n` +
+      `  {\n` +
+      `    "groupIndex": 0,\n` +
+      `    "questions": [\n` +
+      `      {\n` +
+      `        "question": "Question text ending with ?",\n` +
+      `        "options": ["Option A", "Option B", "Option C", "Option D"],\n` +
+      `        "correctAnswer": 0,\n` +
+      `        "explanation": "One sentence explaining why this answer is correct",\n` +
+      `        "difficulty": "easy"\n` +
+      `      }\n` +
+      `    ]\n` +
+      `  }\n` +
+      `]\n` +
+      `correctAnswer is the zero-based index (0–3) of the correct option. ` +
+      `difficulty must be exactly "easy", "medium", or "hard". ` +
+      `All questions must be grounded in the course content — no trick questions or off-topic content.`
+    );
+  },
+
   tutor: (course, { detailed = false } = {}) => {
     const responseStyle = detailed
       ? "Provide thorough, well-structured answers. Use Markdown formatting with headings (##), bullet points (-), bold (**term**), and code blocks where relevant. Include examples and explanations."

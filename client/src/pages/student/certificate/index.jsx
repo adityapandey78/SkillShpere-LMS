@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { AuthContext } from "@/context/auth-context";
-import { getCurrentCourseProgressService } from "@/services";
+import { getCurrentCourseProgressService, getQuizStateService } from "@/services";
 import {
   Award,
   ChevronLeft,
@@ -9,6 +9,7 @@ import {
   GraduationCap,
   Calendar,
   Shield,
+  HelpCircle,
 } from "lucide-react";
 import { useContext, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -20,19 +21,36 @@ function CertificatePage() {
   const [courseData, setCourseData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notCompleted, setNotCompleted] = useState(false);
+  const [quizNotPassed, setQuizNotPassed] = useState(false);
   const certificateRef = useRef(null);
 
   useEffect(() => {
     async function fetchData() {
       if (!auth?.user?._id || !courseId) return;
-      const response = await getCurrentCourseProgressService(auth.user._id, courseId);
-      if (response?.success) {
-        if (!response.data?.completed) {
-          setNotCompleted(true);
-        } else {
-          setCourseData(response.data);
+      const [progressRes, quizRes] = await Promise.all([
+        getCurrentCourseProgressService(auth.user._id, courseId),
+        getQuizStateService(auth.user._id, courseId),
+      ]);
+
+      if (!progressRes?.success || !progressRes.data?.completed) {
+        setNotCompleted(true);
+        setLoading(false);
+        return;
+      }
+
+      // If course has an end-of-course quiz, require it to be passed
+      const quiz = quizRes?.data?.quiz;
+      if (quiz?.config?.mode === "end") {
+        const attempts = quizRes?.data?.attempts || [];
+        const endAttempt = attempts.find((a) => a.groupIndex === 0);
+        if (!endAttempt?.passed) {
+          setQuizNotPassed(true);
+          setLoading(false);
+          return;
         }
       }
+
+      setCourseData(progressRes.data);
       setLoading(false);
     }
     fetchData();
@@ -65,6 +83,33 @@ function CertificatePage() {
           <Button onClick={() => navigate(-1)} className="bg-blue-600 hover:bg-blue-700 text-white">
             <ChevronLeft className="mr-2 h-4 w-4" />
             Go Back
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (quizNotPassed) {
+    return (
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <div className="w-20 h-20 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto mb-6">
+            <HelpCircle className="h-10 w-10 text-amber-400" />
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-3">Final Quiz Required</h2>
+          <p className="text-gray-400 mb-2 leading-relaxed">
+            To earn your certificate, you must score at least{" "}
+            <span className="text-amber-400 font-semibold">60%</span> on the final course assessment.
+          </p>
+          <p className="text-gray-500 text-sm mb-8">
+            Complete the quiz in the course player to unlock your certificate.
+          </p>
+          <Button
+            onClick={() => navigate(-1)}
+            className="bg-amber-500 hover:bg-amber-600 text-white gap-2"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Back to Course
           </Button>
         </div>
       </div>

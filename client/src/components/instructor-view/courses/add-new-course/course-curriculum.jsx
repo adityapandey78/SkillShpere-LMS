@@ -1,4 +1,5 @@
 import MediaProgressbar from "@/components/media-progress-bar";
+import CourseQuizConfig from "@/components/instructor-view/courses/add-new-course/course-quiz-config";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -403,11 +404,11 @@ function CourseCurriculum() {
             </div>
           </div>
 
-          {/* ── Scrollable lecture list ───────────────────────────────── */}
+          {/* ── Scrollable lecture list + quiz config ────────────────── */}
           <div
             ref={lectureListRef}
             className="mt-4 space-y-4 overflow-y-auto pr-1"
-            style={{ maxHeight: "60vh" }}
+            style={{ maxHeight: "75vh" }}
           >
             {courseCurriculumFormData.length === 0 && (
               <div className="text-center py-16 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
@@ -690,6 +691,8 @@ function CourseCurriculum() {
                 </div>
               );
             })}
+            {/* ── AI Quiz Generator section ─────────────────────────── */}
+            <CourseQuizConfig />
           </div>
         </CardContent>
       </Card>

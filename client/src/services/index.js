@@ -198,6 +198,37 @@ export const regenerateCourseFieldService = async (fieldName, courseContext, ins
   return data;
 };
 
+export async function submitQuizAttemptService(userId, courseId, groupIndex, answers) {
+  const { data } = await axiosInstance.post("/ai/quiz/attempt", { userId, courseId, groupIndex, answers });
+  return data;
+}
+
+export async function getQuizStateService(userId, courseId) {
+  const { data } = await axiosInstance.get(`/ai/quiz-state/${userId}/${courseId}`);
+  return data;
+}
+
+export async function generateQuizGroupsService(courseTitle, courseDescription, objectives, lectureGroups, config) {
+  const { data } = await axiosInstance.post("/ai/generate-quiz", {
+    courseTitle,
+    courseDescription,
+    objectives,
+    lectureGroups,
+    config,
+  });
+  return data;
+}
+
+export async function saveQuizService(courseId, config, groups) {
+  const { data } = await axiosInstance.post("/ai/save-quiz", { courseId, config, groups });
+  return data;
+}
+
+export async function getQuizByCourseService(courseId) {
+  const { data } = await axiosInstance.get(`/ai/quiz/${courseId}`);
+  return data;
+}
+
 // Streams AI tutor reply via Server-Sent Events. We use native fetch (not axios)
 // because axios does not expose ReadableStream cleanly in browsers. The optional
 // onChunk callback fires for every text chunk as it arrives, giving the UI a

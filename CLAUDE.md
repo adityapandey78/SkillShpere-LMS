@@ -42,3 +42,8 @@ Full-stack LMS. Client: React 18 + Vite. Server: Express + MongoDB.
 > [2026-05-21] New file added: `server/controllers/ai-controller/quiz-controller.js`
 > [2026-05-21] New file added: `server/controllers/ai-controller/outline-controller.js`
 > [2026-05-21] New file added: `server/routes/ai-routes/index.js`
+> [2026-05-24] New file added: `server/models/Quiz.js`
+> [2026-05-24] New file added: `client/src/components/instructor-view/courses/add-new-course/course-quiz-config.jsx`
+> [2026-05-24] New file added: `server/models/QuizAttempt.js`
+> [2026-05-24] New file added: `server/controllers/ai-controller/quiz-attempt-controller.js`
+> [2026-05-24] New file added: `client/src/components/student-view/student-quiz-panel.jsx`

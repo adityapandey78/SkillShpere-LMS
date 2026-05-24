@@ -6,6 +6,14 @@ import { createContext, useState } from "react";
 
 export const InstructorContext = createContext(null);
 
+export const quizConfigInitial = {
+  enabled: false,
+  mode: "end",
+  lectureInterval: 2,
+  questionCount: 10,
+  difficulty: { easy: 30, medium: 50, hard: 20 },
+};
+
 export default function InstructorProvider({ children }) {
   const [courseLandingFormData, setCourseLandingFormData] = useState(
     courseLandingInitialFormData
@@ -18,6 +26,11 @@ export default function InstructorProvider({ children }) {
     useState(0);
   const [instructorCoursesList, setInstructorCoursesList] = useState([]);
   const [currentEditedCourseId, setCurrentEditedCourseId] = useState(null);
+
+  // Quiz generator state
+  const [quizConfig, setQuizConfig] = useState(quizConfigInitial);
+  const [quizGroups, setQuizGroups] = useState([]);
+  const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false);
 
   return (
     <InstructorContext.Provider
@@ -34,6 +47,12 @@ export default function InstructorProvider({ children }) {
         setInstructorCoursesList,
         currentEditedCourseId,
         setCurrentEditedCourseId,
+        quizConfig,
+        setQuizConfig,
+        quizGroups,
+        setQuizGroups,
+        isGeneratingQuiz,
+        setIsGeneratingQuiz,
       }}
     >
       {children}
