@@ -7,7 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { DollarSign, Users, BookOpen, TrendingUp, Award, Clock } from "lucide-react";
+import { IndianRupee, Users, BookOpen, TrendingUp, Award, Clock } from "lucide-react";
 import { motion } from "framer-motion";
 import images from "@/assets/images";
 
@@ -47,9 +47,9 @@ function InstructorDashboard({ listOfCourses }) {
 
   const config = [
     {
-      icon: DollarSign,
+      icon: IndianRupee,
       label: "Total Revenue",
-      value: `$${stats.totalProfit.toLocaleString()}`,
+      value: `₹${stats.totalProfit.toLocaleString("en-IN")}`,
       bgGradient: "from-green-500 to-emerald-600",
       iconBg: "bg-green-100",
       iconColor: "text-green-600",

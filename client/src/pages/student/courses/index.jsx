@@ -288,7 +288,7 @@ function StudentViewCoursesPage() {
                             {courseItem?.pricing === 0 ? (
                               <Badge className="bg-green-500 text-white">Free</Badge>
                             ) : (
-                              <Badge className="bg-blue-500 text-white">${courseItem?.pricing}</Badge>
+                              <Badge className="bg-blue-500 text-white">₹{courseItem?.pricing}</Badge>
                             )}
                           </div>
                         </div>
@@ -326,7 +326,7 @@ function StudentViewCoursesPage() {
 
                             <div className="text-right">
                               <div className="text-2xl font-bold text-gray-900">
-                                {courseItem?.pricing === 0 ? 'Free' : `$${courseItem?.pricing}`}
+                                {courseItem?.pricing === 0 ? 'Free' : `₹${courseItem?.pricing}`}
                               </div>
                             </div>
                           </div>

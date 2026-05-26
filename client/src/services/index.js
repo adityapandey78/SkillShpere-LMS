@@ -21,14 +21,9 @@ export async function checkAuthService() {
   return data;
 }
 
-export async function mediaUploadService(formData, onProgressCallback) {
+export async function mediaUploadService(formData) {
   const { data } = await axiosInstance.post("/media/upload", formData, {
-    onUploadProgress: (progressEvent) => {
-      const percentCompleted = Math.round(
-        (progressEvent.loaded * 100) / progressEvent.total
-      );
-      onProgressCallback(percentCompleted);
-    },
+    timeout: 0, // no timeout — video uploads can take minutes
   });
 
   return data;
@@ -69,14 +64,9 @@ export async function updateCourseByIdService(id, formData) {
   return data;
 }
 
-export async function mediaBulkUploadService(formData, onProgressCallback) {
+export async function mediaBulkUploadService(formData) {
   const { data } = await axiosInstance.post("/media/bulk-upload", formData, {
-    onUploadProgress: (progressEvent) => {
-      const percentCompleted = Math.round(
-        (progressEvent.loaded * 100) / progressEvent.total
-      );
-      onProgressCallback(percentCompleted);
-    },
+    timeout: 0, // no timeout — video uploads can take minutes
   });
 
   return data;

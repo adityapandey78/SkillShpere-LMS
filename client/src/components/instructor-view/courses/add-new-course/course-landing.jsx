@@ -307,7 +307,7 @@ function CourseLanding() {
           {/* Pricing */}
           <div className="space-y-1.5 max-w-xs">
             <label className="text-sm font-medium text-gray-700">
-              Price (USD) <span className="text-red-500">*</span>
+              Price (INR) <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <span className="absolute inset-y-0 left-3 flex items-center text-gray-400 text-sm pointer-events-none select-none">

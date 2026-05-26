@@ -104,7 +104,7 @@ function AddNewCoursePage() {
       image: courseLandingFormData.image || DEFAULT_THUMBNAIL,
       students: [],
       curriculum: courseCurriculumFormData,
-      isPublished: true,
+      isPublised: true,
     };
 
     try {

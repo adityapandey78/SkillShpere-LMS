@@ -14,7 +14,7 @@ import {
   courseLandingInitialFormData,
 } from "@/config";
 import { InstructorContext } from "@/context/instructor-context";
-import { Delete, Edit, Plus, Users, DollarSign, TrendingUp, BookOpen } from "lucide-react";
+import { Delete, Edit, Plus, Users, TrendingUp, BookOpen } from "lucide-react";
 import { useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -173,21 +173,21 @@ function InstructorCourses({ listOfCourses }) {
                         </TableCell>
                         <TableCell className="text-center">
                           <div className="flex items-center justify-center space-x-2">
-                            <DollarSign className="h-4 w-4 text-green-500" />
+                            <span className="text-green-500 font-bold">₹</span>
                             <span className="font-semibold text-green-600">
-                              ${((course?.students?.length || 0) * course?.pricing).toLocaleString()}
+                              {((course?.students?.length || 0) * course?.pricing).toLocaleString("en-IN")}
                             </span>
                           </div>
                         </TableCell>
                         <TableCell className="text-center">
-                          <Badge 
+                          <Badge
                             className={`${
-                              course?.isPublised 
-                                ? "bg-green-100 text-green-700 hover:bg-green-100" 
+                              course?.isPublised !== false
+                                ? "bg-green-100 text-green-700 hover:bg-green-100"
                                 : "bg-yellow-100 text-yellow-700 hover:bg-yellow-100"
                             }`}
                           >
-                            {course?.isPublised ? "Published" : "Draft"}
+                            {course?.isPublised !== false ? "Published" : "Draft"}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">

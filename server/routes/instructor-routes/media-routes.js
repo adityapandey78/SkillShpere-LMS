@@ -1,5 +1,6 @@
 const express = require("express");
 const multer = require("multer");
+const fs = require("fs");
 const {
   uploadMediaToCloudinary,
   deleteMediaFromCloudinary,
@@ -9,16 +10,21 @@ const router = express.Router();
 
 const upload = multer({ dest: "uploads/" });
 
+function cleanupFile(path) {
+  if (path) fs.unlink(path, () => {});
+}
+
 router.post("/upload", upload.single("file"), async (req, res) => {
   try {
     const result = await uploadMediaToCloudinary(req.file.path);
+    cleanupFile(req.file.path);
     res.status(200).json({
       success: true,
       data: result,
     });
   } catch (e) {
     console.log(e);
-
+    cleanupFile(req.file?.path);
     res.status(500).json({ success: false, message: "Error uploading file" });
   }
 });
@@ -54,6 +60,7 @@ router.post("/bulk-upload", upload.array("files", 10), async (req, res) => {
     );
 
     const results = await Promise.all(uploadPromises);
+    req.files.forEach((f) => cleanupFile(f.path));
 
     res.status(200).json({
       success: true,
@@ -61,7 +68,7 @@ router.post("/bulk-upload", upload.array("files", 10), async (req, res) => {
     });
   } catch (event) {
     console.log(event);
-
+    req.files?.forEach((f) => cleanupFile(f.path));
     res
       .status(500)
       .json({ success: false, message: "Error in bulk uploading files" });

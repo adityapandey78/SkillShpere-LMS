@@ -483,7 +483,7 @@ function StudentViewCourseDetailsPage() {
                       {studentViewCourseDetails?.pricing === 0 ? (
                         <span className="text-green-600">Free</span>
                       ) : (
-                        <span>${studentViewCourseDetails?.pricing}</span>
+                        <span>₹{studentViewCourseDetails?.pricing}</span>
                       )}
                     </div>
                     {studentViewCourseDetails?.pricing > 0 && (

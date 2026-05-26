@@ -223,7 +223,7 @@ function StudentHomePage() {
                           </Badge>
                         ) : (
                           <Badge className="bg-blue-500 hover:bg-blue-600 text-white">
-                            ${courseItem?.pricing}
+                            ₹{courseItem?.pricing}
                           </Badge>
                         )}
                       </div>

@@ -32,6 +32,7 @@ import {
   Video,
   Youtube,
 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { useContext, useRef, useState } from "react";
 
 const YT_PATTERN =
@@ -47,11 +48,15 @@ function CourseCurriculum() {
     setCourseCurriculumFormData,
     mediaUploadProgress,
     setMediaUploadProgress,
-    setMediaUploadProgressPercentage,
   } = useContext(InstructorContext);
+
+  const { toast } = useToast();
 
   const bulkUploadInputRef = useRef(null);
   const lectureListRef = useRef(null);
+
+  // null = idle, number = single-lecture index uploading, "bulk" = bulk upload in progress
+  const [uploadingIndex, setUploadingIndex] = useState(null);
 
   // Tracks which YouTube URL fields the user has interacted with
   const [urlTouched, setUrlTouched] = useState({});
@@ -159,11 +164,9 @@ function CourseCurriculum() {
     videoFormData.append("file", selectedFile);
 
     try {
+      setUploadingIndex(idx);
       setMediaUploadProgress(true);
-      const response = await mediaUploadService(
-        videoFormData,
-        setMediaUploadProgressPercentage
-      );
+      const response = await mediaUploadService(videoFormData);
       if (response.success) {
         const copy = [...courseCurriculumFormData];
         copy[idx] = {
@@ -173,11 +176,27 @@ function CourseCurriculum() {
           duration: response?.data?.duration || 0,
         };
         setCourseCurriculumFormData(copy);
-        setMediaUploadProgress(false);
+        toast({
+          title: "Video uploaded successfully",
+          description: `"${copy[idx].title || `Lecture ${idx + 1}`}" video is ready.`,
+        });
+      } else {
+        toast({
+          title: "Upload failed",
+          description: "The video could not be uploaded. Please try again.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
-      console.log(error);
+      console.error(error);
+      toast({
+        title: "Upload failed",
+        description: "Something went wrong while uploading. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setMediaUploadProgress(false);
+      setUploadingIndex(null);
     }
   }
 
@@ -239,15 +258,14 @@ function CourseCurriculum() {
 
   async function handleMediaBulkUpload(event) {
     const selectedFiles = Array.from(event.target.files);
+    if (!selectedFiles.length) return;
     const bulkFormData = new FormData();
     selectedFiles.forEach((f) => bulkFormData.append("files", f));
 
     try {
+      setUploadingIndex("bulk");
       setMediaUploadProgress(true);
-      const response = await mediaBulkUploadService(
-        bulkFormData,
-        setMediaUploadProgressPercentage
-      );
+      const response = await mediaBulkUploadService(bulkFormData);
       if (response?.success) {
         const base = areAllEmpty(courseCurriculumFormData)
           ? []
@@ -265,11 +283,29 @@ function CourseCurriculum() {
           })),
         ];
         setCourseCurriculumFormData(merged);
-        setMediaUploadProgress(false);
+        toast({
+          title: `${selectedFiles.length} video${selectedFiles.length > 1 ? "s" : ""} uploaded`,
+          description: "All videos were uploaded and added as lectures.",
+        });
+      } else {
+        toast({
+          title: "Bulk upload failed",
+          description: "The upload could not be completed. Please try again.",
+          variant: "destructive",
+        });
       }
     } catch (e) {
-      console.log(e);
+      console.error(e);
+      toast({
+        title: "Bulk upload failed",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setMediaUploadProgress(false);
+      setUploadingIndex(null);
+      // reset the file input so the same files can be re-selected if needed
+      if (bulkUploadInputRef.current) bulkUploadInputRef.current.value = "";
     }
   }
 
@@ -380,6 +416,7 @@ function CourseCurriculum() {
             variant="outline"
             className="cursor-pointer flex-shrink-0"
             onClick={handleOpenBulkUploadDialog}
+            disabled={uploadingIndex !== null}
           >
             <Upload className="w-4 h-4 mr-2" />
             Bulk Upload
@@ -391,16 +428,11 @@ function CourseCurriculum() {
           <div className="sticky top-[88px] z-10 bg-white pb-3 pt-1 border-b border-gray-100">
             <div className="flex items-center gap-4">
               <Button
-                disabled={!isCourseCurriculumFormDataValid() || mediaUploadProgress}
+                disabled={!isCourseCurriculumFormDataValid() || uploadingIndex !== null}
                 onClick={handleNewLecture}
               >
                 + Add Lecture
               </Button>
-              {mediaUploadProgress && (
-                <div className="flex-1">
-                  <MediaProgressbar isMediaUploading={mediaUploadProgress} />
-                </div>
-              )}
             </div>
           </div>
 
@@ -410,7 +442,12 @@ function CourseCurriculum() {
             className="mt-4 space-y-4 overflow-y-auto pr-1"
             style={{ maxHeight: "75vh" }}
           >
-            {courseCurriculumFormData.length === 0 && (
+            {/* Bulk upload progress — shown above the lecture list */}
+            {uploadingIndex === "bulk" && (
+              <MediaProgressbar isMediaUploading={true} />
+            )}
+
+            {courseCurriculumFormData.length === 0 && uploadingIndex === null && (
               <div className="text-center py-16 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
                 <div className="h-14 w-14 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
                   <Video className="h-7 w-7 text-gray-300" />
@@ -650,36 +687,50 @@ function CourseCurriculum() {
                     ) : (
                       /* ── File upload drop zone ────────────────────── */
                       <div className="space-y-3 max-w-2xl">
-                        <label
-                          htmlFor={`upload-${index}`}
-                          className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-xl p-8 bg-gray-50 hover:bg-gray-100 hover:border-indigo-300 transition-colors cursor-pointer group"
-                        >
-                          <div className="h-11 w-11 rounded-full bg-indigo-100 flex items-center justify-center group-hover:bg-indigo-200 transition-colors">
-                            <Upload className="h-5 w-5 text-indigo-600" />
+                        {uploadingIndex === index ? (
+                          /* Per-lecture upload progress */
+                          <div className="border-2 border-dashed border-blue-200 rounded-xl p-6 bg-blue-50/40">
+                            <MediaProgressbar isMediaUploading={true} />
                           </div>
-                          <div className="text-center">
-                            <p className="text-sm font-medium text-gray-700">
-                              Click to upload a video
-                            </p>
-                            <p className="text-xs text-gray-400 mt-0.5">
-                              MP4, MOV, AVI — max 500 MB
-                            </p>
-                          </div>
-                          <Input
-                            id={`upload-${index}`}
-                            type="file"
-                            accept="video/*"
-                            onChange={(e) =>
-                              handleSingleLectureUpload(e, index)
-                            }
-                            className="hidden"
-                          />
-                        </label>
+                        ) : (
+                          <label
+                            htmlFor={`upload-${index}`}
+                            className={cn(
+                              "flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-xl p-8 bg-gray-50 transition-colors group",
+                              uploadingIndex === null
+                                ? "hover:bg-gray-100 hover:border-indigo-300 cursor-pointer"
+                                : "opacity-50 cursor-not-allowed pointer-events-none"
+                            )}
+                          >
+                            <div className="h-11 w-11 rounded-full bg-indigo-100 flex items-center justify-center group-hover:bg-indigo-200 transition-colors">
+                              <Upload className="h-5 w-5 text-indigo-600" />
+                            </div>
+                            <div className="text-center">
+                              <p className="text-sm font-medium text-gray-700">
+                                Click to upload a video
+                              </p>
+                              <p className="text-xs text-gray-400 mt-0.5">
+                                MP4, MOV, AVI — max 500 MB
+                              </p>
+                            </div>
+                            <Input
+                              id={`upload-${index}`}
+                              type="file"
+                              accept="video/*"
+                              disabled={uploadingIndex !== null}
+                              onChange={(e) =>
+                                handleSingleLectureUpload(e, index)
+                              }
+                              className="hidden"
+                            />
+                          </label>
+                        )}
                         <Button
                           type="button"
                           variant="outline"
                           size="sm"
                           onClick={() => handleDeleteLecture(index)}
+                          disabled={uploadingIndex !== null}
                           className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
                         >
                           <Trash2 className="w-3.5 h-3.5 mr-1.5" />
