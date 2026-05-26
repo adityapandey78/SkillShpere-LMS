@@ -29,8 +29,8 @@ const createOrder = async (req, res) => {
         payment_method: "paypal",
       },
       redirect_urls: {
-        return_url: `${process.env.CLIENT_URL}/payment-return`,
-        cancel_url: `${process.env.CLIENT_URL}/payment-cancel`,
+        return_url: `${process.env.CLIENT_URL}/student/payment-return`,
+        cancel_url: `${process.env.CLIENT_URL}/student/payment-cancel`,
       },
       transactions: [
         {
@@ -39,7 +39,7 @@ const createOrder = async (req, res) => {
               {
                 name: courseTitle,
                 sku: courseId,
-                price: coursePricing,
+                price: parseFloat(coursePricing).toFixed(2),
                 currency: "USD",
                 quantity: 1,
               },
@@ -47,7 +47,7 @@ const createOrder = async (req, res) => {
           },
           amount: {
             currency: "USD",
-            total: coursePricing.toFixed(2),
+            total: parseFloat(coursePricing).toFixed(2),
           },
           description: courseTitle,
         },
@@ -56,7 +56,7 @@ const createOrder = async (req, res) => {
 
     paypal.payment.create(create_payment_json, async (error, paymentInfo) => {
       if (error) {
-        console.log(error);
+        console.error("PayPal error:", JSON.stringify(error, null, 2));
         return res.status(500).json({
           success: false,
           message: "Error while creating paypal payment!",

@@ -15,6 +15,7 @@ const AddNewCoursePage = lazy(() => import("./pages/instructor/add-new-course"))
 const StudentViewCoursesPage = lazy(() => import("./pages/student/courses"));
 const StudentViewCourseDetailsPage = lazy(() => import("./pages/student/course-details"));
 const PaypalPaymentReturnPage = lazy(() => import("./pages/student/payment-return"));
+const PaypalPaymentCancelPage = lazy(() => import("./pages/student/payment-cancel"));
 const StudentCoursesPage = lazy(() => import("./pages/student/student-courses"));
 const StudentViewCourseProgressPage = lazy(() => import("./pages/student/course-progress"));
 const CertificatePage = lazy(() => import("./pages/student/certificate"));
@@ -110,6 +111,7 @@ function App() {
             <Route path="courses" element={<StudentViewCoursesPage />} />
             <Route path="course/details/:id" element={<StudentViewCourseDetailsPage />} />
             <Route path="payment-return" element={<PaypalPaymentReturnPage />} />
+            <Route path="payment-cancel" element={<PaypalPaymentCancelPage />} />
             <Route path="student-courses" element={<StudentCoursesPage />} />
             <Route path="course-progress/:id" element={<StudentViewCourseProgressPage />} />
             <Route path="certificate/:courseId" element={<CertificatePage />} />
