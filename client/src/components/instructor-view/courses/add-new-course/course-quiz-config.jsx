@@ -428,6 +428,14 @@ function CourseQuizConfig() {
 
   async function handleGenerate() {
     setError("");
+    if (quizConfig.questionCount < 1) {
+      setError("Questions per quiz must be at least 1.");
+      return;
+    }
+    if (quizConfig.mode === "interval" && quizConfig.lectureInterval < 1) {
+      setError("Lecture interval must be at least 1.");
+      return;
+    }
     if (!diffValid) {
       setError("Difficulty percentages must add up to 100%.");
       return;
@@ -622,20 +630,30 @@ function CourseQuizConfig() {
                           <Label className="text-xs font-semibold text-gray-600 mb-1.5 block">
                             Generate a quiz after every
                           </Label>
-                          <div className="flex items-center gap-2">
-                            <Input
-                              type="number"
-                              min="1"
-                              max="10"
-                              value={quizConfig.lectureInterval}
-                              onChange={(e) =>
-                                updateConfig({
-                                  lectureInterval: Math.max(1, Math.min(10, Number(e.target.value))),
-                                })
-                              }
-                              className="w-20 text-center font-bold text-amber-700"
-                            />
-                            <span className="text-sm text-gray-600">lecture(s)</span>
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                              <Input
+                                type="number"
+                                min="1"
+                                max="10"
+                                value={quizConfig.lectureInterval === 0 ? "" : quizConfig.lectureInterval}
+                                onChange={(e) =>
+                                  updateConfig({
+                                    lectureInterval: e.target.value === "" ? 0 : Math.min(10, Number(e.target.value)),
+                                  })
+                                }
+                                className={cn(
+                                  "w-20 text-center font-bold text-amber-700",
+                                  quizConfig.lectureInterval < 1 && "border-rose-400 focus-visible:ring-rose-300"
+                                )}
+                              />
+                              <span className="text-sm text-gray-600">lecture(s)</span>
+                            </div>
+                            {quizConfig.lectureInterval < 1 && (
+                              <p className="text-xs text-rose-500 flex items-center gap-1">
+                                <AlertCircle className="w-3 h-3" /> Must be at least 1
+                              </p>
+                            )}
                           </div>
                           {previewGroups.length > 0 && (
                             <p className="text-xs text-gray-400 mt-1.5">
@@ -670,19 +688,28 @@ function CourseQuizConfig() {
                     <div className="flex items-center gap-2">
                       <Input
                         type="number"
-                        min="3"
+                        min="1"
                         max="20"
-                        value={quizConfig.questionCount}
+                        value={quizConfig.questionCount === 0 ? "" : quizConfig.questionCount}
                         onChange={(e) =>
                           updateConfig({
-                            questionCount: Math.max(3, Math.min(20, Number(e.target.value))),
+                            questionCount: e.target.value === "" ? 0 : Math.min(20, Number(e.target.value)),
                           })
                         }
-                        className="w-20 text-center font-bold"
+                        className={cn(
+                          "w-20 text-center font-bold",
+                          quizConfig.questionCount < 1 && "border-rose-400 focus-visible:ring-rose-300"
+                        )}
                       />
                       <span className="text-sm text-gray-500">questions</span>
                     </div>
-                    <p className="text-xs text-gray-400 mt-1.5">Range: 3 – 20</p>
+                    {quizConfig.questionCount < 1 ? (
+                      <p className="text-xs text-rose-500 mt-1.5 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" /> Must be at least 1
+                      </p>
+                    ) : (
+                      <p className="text-xs text-gray-400 mt-1.5">Range: 1 – 20</p>
+                    )}
                   </div>
 
                   {/* Difficulty distribution */}
@@ -751,10 +778,16 @@ function CourseQuizConfig() {
                   <Button
                     type="button"
                     onClick={handleGenerate}
-                    disabled={isGeneratingQuiz || !diffValid || !hasEnoughLectures}
+                    disabled={
+                      isGeneratingQuiz ||
+                      !diffValid ||
+                      !hasEnoughLectures ||
+                      quizConfig.questionCount < 1 ||
+                      (quizConfig.mode === "interval" && quizConfig.lectureInterval < 1)
+                    }
                     className={cn(
                       "gap-2 font-semibold transition-all",
-                      isGeneratingQuiz || !diffValid || !hasEnoughLectures
+                      isGeneratingQuiz || !diffValid || !hasEnoughLectures || quizConfig.questionCount < 1 || (quizConfig.mode === "interval" && quizConfig.lectureInterval < 1)
                         ? "bg-amber-300 text-white cursor-not-allowed"
                         : "bg-amber-500 hover:bg-amber-600 text-white shadow-md hover:shadow-lg"
                     )}

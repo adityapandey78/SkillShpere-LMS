@@ -189,7 +189,7 @@ export const regenerateCourseFieldService = async (fieldName, courseContext, ins
 };
 
 export async function submitQuizAttemptService(userId, courseId, groupIndex, answers) {
-  const { data } = await axiosInstance.post("/ai/quiz/attempt", { userId, courseId, groupIndex, answers });
+  const { data } = await axiosInstance.post("/ai/quiz/attempt", { userId, courseId, groupIndex, answers }, { timeout: 0 });
   return data;
 }
 
@@ -205,7 +205,7 @@ export async function generateQuizGroupsService(courseTitle, courseDescription, 
     objectives,
     lectureGroups,
     config,
-  });
+  }, { timeout: 0 });
   return data;
 }
 
