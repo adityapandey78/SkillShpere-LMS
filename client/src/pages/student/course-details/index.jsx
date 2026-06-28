@@ -19,6 +19,7 @@ import {
   enrollInFreeCourseService,
   fetchStudentViewCourseDetailsService,
 } from "@/services";
+import { trackEvent } from "@/lib/pulsar";
 import {
   CheckCircle,
   Globe,
@@ -84,6 +85,13 @@ function StudentViewCourseDetailsPage() {
     if (response?.success) {
       setStudentViewCourseDetails(response?.data);
       setLoadingState(false);
+      trackEvent("course_viewed", {
+        courseId: response?.data?._id,
+        title: response?.data?.title,
+        pricing: response?.data?.pricing,
+        instructor: response?.data?.instructorName,
+        category: response?.data?.category,
+      });
     } else {
       setStudentViewCourseDetails(null);
       setLoadingState(false);
@@ -129,6 +137,12 @@ function StudentViewCourseDetailsPage() {
         JSON.stringify(response?.data?.orderId)
       );
       setApprovalUrl(response?.data?.approveUrl);
+      trackEvent("checkout_started", {
+        courseId: studentViewCourseDetails?._id,
+        title: studentViewCourseDetails?.title,
+        pricing: studentViewCourseDetails?.pricing,
+        method: "paypal",
+      });
     }
   }
 
@@ -147,6 +161,12 @@ function StudentViewCourseDetailsPage() {
     try {
       const response = await enrollInFreeCourseService(enrollmentPayload);
       if (response.success) {
+        trackEvent("course_enrolled", {
+          courseId: studentViewCourseDetails?._id,
+          title: studentViewCourseDetails?.title,
+          pricing: 0,
+          type: "free",
+        });
         alert("Successfully enrolled in free course!");
         // Navigate to course progress page
         window.location.href = `/student/course-progress/${studentViewCourseDetails?._id}`;

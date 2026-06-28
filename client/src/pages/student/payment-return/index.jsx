@@ -1,5 +1,6 @@
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { captureAndFinalizePaymentService } from "@/services";
+import { trackEvent } from "@/lib/pulsar";
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
@@ -21,6 +22,13 @@ function PaypalPaymentReturnPage() {
         );
 
         if (response?.success) {
+          trackEvent("course_purchased", {
+            orderId,
+            courseId: response?.data?.courseId,
+            title: response?.data?.courseTitle,
+            pricing: response?.data?.coursePricing,
+            method: "paypal",
+          });
           sessionStorage.removeItem("currentOrderId");
           window.location.href = "/student/student-courses";
         }

@@ -10,6 +10,7 @@ import {
 } from "@/config";
 import { AuthContext } from "@/context/auth-context";
 import { InstructorContext } from "@/context/instructor-context";
+import { trackEvent } from "@/lib/pulsar";
 import {
   addNewCourseService,
   fetchInstructorCourseDetailsService,
@@ -116,6 +117,12 @@ function AddNewCoursePage() {
       if (response?.success) {
         // Save quiz if instructor generated one
         const courseId = response?.data?._id || currentEditedCourseId;
+        trackEvent(currentEditedCourseId !== null ? "course_updated" : "course_created", {
+          courseId,
+          title: courseFinalFormData?.title,
+          pricing: courseFinalFormData?.pricing,
+          category: courseFinalFormData?.category,
+        });
         if (courseId && quizConfig.enabled && quizGroups.length > 0) {
           try {
             await saveQuizService(courseId, quizConfig, quizGroups);
