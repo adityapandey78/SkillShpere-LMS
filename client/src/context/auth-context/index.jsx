@@ -1,6 +1,7 @@
 import PageLoader from "@/components/ui/page-loader";
 import { initialSignInFormData, initialSignUpFormData } from "@/config";
 import { checkAuthService, loginService, registerService } from "@/services";
+import { identifyUser } from "@/lib/pulsar";
 import { useToast } from "@/hooks/use-toast";
 import { createContext, useEffect, useState, useMemo } from "react";
 
@@ -79,6 +80,8 @@ export default function AuthProvider({ children }) {
           authenticate: true,
           user: data.data.user,
         });
+        // Stitch this visitor's anonymous journey to the real user in Pulsar.
+        identifyUser(data.data.user);
       } else {
         toast({
           variant: "destructive",
@@ -115,6 +118,8 @@ export default function AuthProvider({ children }) {
           authenticate: true,
           user: data.data.user,
         });
+        // Re-identify returning logged-in users on refresh.
+        identifyUser(data.data.user);
       } else {
         setAuth({
           authenticate: false,
