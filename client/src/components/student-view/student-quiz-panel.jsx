@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { AuthContext } from "@/context/auth-context";
 import { submitQuizAttemptService } from "@/services";
+import { trackEvent } from "@/lib/pulsar";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -88,6 +89,13 @@ function StudentQuizPanel({
       if (response?.success) {
         setResults({ ...response.data, answers });
         setPhase("results");
+        trackEvent("quiz_submitted", {
+          courseId,
+          groupIndex,
+          score: response.data?.score,
+          percentage: response.data?.percentage,
+          passed: response.data?.passed,
+        });
         onAttemptComplete?.(response.data);
       } else {
         setError(response?.message || "Failed to submit. Please try again.");

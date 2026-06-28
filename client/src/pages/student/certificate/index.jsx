@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { AuthContext } from "@/context/auth-context";
 import { getCurrentCourseProgressService, getQuizStateService } from "@/services";
+import { trackEvent } from "@/lib/pulsar";
 import {
   Award,
   ChevronLeft,
@@ -52,6 +53,10 @@ function CertificatePage() {
 
       setCourseData(progressRes.data);
       setLoading(false);
+      trackEvent("certificate_viewed", {
+        courseId,
+        title: progressRes.data?.courseDetails?.title,
+      });
     }
     fetchData();
   }, [courseId, auth?.user?._id]); // eslint-disable-line react-hooks/exhaustive-deps

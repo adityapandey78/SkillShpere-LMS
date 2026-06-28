@@ -22,6 +22,7 @@ import {
   askAITutorService,
   getQuizStateService,
 } from "@/services";
+import { trackEvent } from "@/lib/pulsar";
 import {
   Award,
   BookOpen,
@@ -159,6 +160,7 @@ function StudentViewCourseProgressPage() {
   const currentLectureRef = useRef(null);
   const courseProgressRef = useRef(null);
   const authRef = useRef(null);
+  const completedTrackedRef = useRef(false); // fire course_completed only once
 
   useEffect(() => { currentLectureRef.current = currentLecture; }, [currentLecture]);
   useEffect(() => { courseProgressRef.current = studentCurrentCourseProgress; }, [studentCurrentCourseProgress]);
@@ -287,6 +289,14 @@ function StudentViewCourseProgressPage() {
 
     if (response.data.completed) {
       setIsCourseCompleted(true);
+      if (!completedTrackedRef.current) {
+        completedTrackedRef.current = true;
+        trackEvent("course_completed", {
+          courseId: response.data.courseDetails?._id,
+          title: response.data.courseDetails?.title,
+          lectures: response.data.courseDetails?.curriculum?.length,
+        });
+      }
       setCurrentLecture(response.data.courseDetails.curriculum[0]);
       setCurrentLectureIndex(0);
       // Completion dialog is now handled by the useEffect above (after quiz loads)
@@ -344,6 +354,12 @@ function StudentViewCourseProgressPage() {
         lecture._id
       );
       if (response?.success) {
+        trackEvent("lecture_completed", {
+          courseId: courseProgress.courseDetails._id,
+          courseTitle: courseProgress.courseDetails?.title,
+          lectureId: lecture._id,
+          lectureTitle: lecture?.title,
+        });
         await fetchCurrentCourseProgress(false);
       }
     } catch (err) {

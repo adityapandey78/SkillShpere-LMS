@@ -1,7 +1,7 @@
 import PageLoader from "@/components/ui/page-loader";
 import { initialSignInFormData, initialSignUpFormData } from "@/config";
 import { checkAuthService, loginService, registerService } from "@/services";
-import { identifyUser } from "@/lib/pulsar";
+import { identifyUser, trackEvent } from "@/lib/pulsar";
 import { useToast } from "@/hooks/use-toast";
 import { createContext, useEffect, useState, useMemo } from "react";
 
@@ -37,6 +37,11 @@ export default function AuthProvider({ children }) {
     try {
       const data = await registerService(signUpFormData);
       if (data.success) {
+        trackEvent("signup", {
+          name: signUpFormData?.userName,
+          email: signUpFormData?.userEmail,
+          role: signUpFormData?.role,
+        });
         toast({
           title: "Registration Successful",
           description: "Your account has been created successfully!",
