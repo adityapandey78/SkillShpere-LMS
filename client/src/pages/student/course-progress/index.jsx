@@ -455,6 +455,11 @@ function StudentViewCourseProgressPage() {
   async function handleAISend() {
     const trimmed = aiInput.trim();
     if (!trimmed || aiLoading) return;
+    trackEvent("ai_tutor_used", {
+      courseId: studentCurrentCourseProgress?.courseDetails?._id,
+      courseTitle: studentCurrentCourseProgress?.courseDetails?.title,
+      detailed: detailedMode,
+    });
     const historyForRequest = aiMessages.slice(1);
     setAiMessages((prev) => [
       ...prev,

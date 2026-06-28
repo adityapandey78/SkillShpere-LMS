@@ -15,7 +15,7 @@ import {
   Trophy,
   XCircle,
 } from "lucide-react";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
 // ─── Score ring ───────────────────────────────────────────────────────────────
@@ -67,6 +67,14 @@ function StudentQuizPanel({
       : {}
   );
   const [phase, setPhase] = useState(existingAttempt ? "results" : "taking");
+
+  // Track when a student begins a quiz (complements quiz_submitted).
+  useEffect(() => {
+    if (!existingAttempt) {
+      trackEvent("quiz_started", { courseId, groupIndex, questions: questions.length });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [results, setResults] = useState(existingAttempt || null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
