@@ -55,6 +55,8 @@ const createOrder = async (req, res) => {
     }
 
     const amount = parseFloat(course.pricing).toFixed(2);
+    // PayPal's REST API does not accept INR. Override per environment if needed.
+    const currency = process.env.PAYPAL_CURRENCY || "USD";
 
     const paymentInfo = await createPayPalPayment({
       intent: "sale",
@@ -71,12 +73,12 @@ const createOrder = async (req, res) => {
                 name: course.title,
                 sku: courseId,
                 price: amount,
-                currency: "INR",
+                currency,
                 quantity: 1,
               },
             ],
           },
-          amount: { currency: "INR", total: amount },
+          amount: { currency, total: amount },
           description: course.title,
         },
       ],
@@ -111,10 +113,21 @@ const createOrder = async (req, res) => {
       data: { approveUrl, orderId: newlyCreatedCourseOrder._id },
     });
   } catch (err) {
-    console.error("Create order error:", err.message || err);
+    // PayPal SDK errors keep their detail on err.response (name, message,
+    // details[]), not on err.message — log the whole thing or you get nothing.
+    const paypalError = err.response || err;
+    console.error("[order/create] failed:", err.message || err);
+    console.error("[order/create] paypal response:", JSON.stringify(paypalError, null, 2));
+
+    const detail =
+      paypalError?.details?.[0]?.issue ||
+      paypalError?.name ||
+      err.message ||
+      "unknown error";
+
     res.status(500).json({
       success: false,
-      message: "Error while creating paypal payment!",
+      message: `Could not start the PayPal payment (${detail}).`,
     });
   }
 };
