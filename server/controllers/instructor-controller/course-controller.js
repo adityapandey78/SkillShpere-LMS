@@ -41,7 +41,7 @@ const getAllCourses = async (req, res) => {
       data: coursesList,
     });
   } catch (e) {
-    console.log(e);
+    console.error("[instructor/courses] create/list failed:", e.message || e);
     res.status(500).json({
       success: false,
       message: "Some error occured!",
@@ -66,7 +66,7 @@ const getCourseDetailsByID = async (req, res) => {
       data: courseDetails,
     });
   } catch (e) {
-    console.log(e);
+    console.error("[instructor/courses] details/update failed:", e.message || e);
     res.status(500).json({
       success: false,
       message: "Some error occured!",

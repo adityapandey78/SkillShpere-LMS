@@ -78,11 +78,14 @@ app.use("/student/courses-bought", studentCoursesRoutes);
 app.use("/student/course-progress", studentCourseProgressRoutes);
 app.use("/ai", aiRoutes);
 
+// Anything a controller didn't catch lands here. Log which request caused it,
+// otherwise a stack trace on its own tells you nothing in Vercel's log view.
 app.use((err, req, res, next) => {
-  console.log(err.stack);
+  console.error(`[unhandled] ${req.method} ${req.originalUrl}:`, err.message || err);
+  console.error(err.stack);
   res.status(500).json({
     success: false,
-    message: "Something went wrong",
+    message: "Something went wrong on the server. Please try again.",
   });
 });
 

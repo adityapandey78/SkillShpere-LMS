@@ -23,7 +23,7 @@ router.post("/upload", upload.single("file"), async (req, res) => {
       data: result,
     });
   } catch (e) {
-    console.log(e);
+    console.error("[media] upload failed:", e.message || e);
     cleanupFile(req.file?.path);
     res.status(500).json({ success: false, message: "Error uploading file" });
   }
@@ -47,7 +47,7 @@ router.delete("/delete/:id", async (req, res) => {
       message: "Assest deleted successfully from cloudinary",
     });
   } catch (e) {
-    console.log(e);
+    console.error("[media] bulk upload failed:", e.message || e);
 
     res.status(500).json({ success: false, message: "Error deleting file" });
   }

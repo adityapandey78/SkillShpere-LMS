@@ -16,7 +16,8 @@ export async function loginService(formData) {
 }
 
 export async function checkAuthService() {
-  const { data } = await axiosInstance.get("/auth/check-auth");
+  // A 401 here just means "not signed in", so don't toast it on every page load.
+  const { data } = await axiosInstance.get("/auth/check-auth", { silentError: true });
 
   return data;
 }
@@ -179,12 +180,12 @@ export async function unenrollCourseService(studentId, courseId) {
 }
 
 export const generateCourseOutlineService = async (topic, level, targetAudience, syllabus) => {
-  const { data } = await axiosInstance.post("/ai/generate-outline", { topic, level, targetAudience, syllabus });
+  const { data } = await axiosInstance.post("/ai/generate-outline", { topic, level, targetAudience, syllabus }, { silentError: true });
   return data;
 };
 
 export const regenerateCourseFieldService = async (fieldName, courseContext, instruction) => {
-  const { data } = await axiosInstance.post("/ai/regenerate-field", { fieldName, courseContext, instruction });
+  const { data } = await axiosInstance.post("/ai/regenerate-field", { fieldName, courseContext, instruction }, { silentError: true });
   return data;
 };
 

@@ -54,7 +54,7 @@ const getAllStudentViewCourses = async (req, res) => {
       data: coursesList,
     });
   } catch (e) {
-    console.log(e);
+    console.error("[student/courses] list failed:", e.message || e);
     res.status(500).json({
       success: false,
       message: "Some error occured!",
@@ -80,7 +80,7 @@ const getStudentViewCourseDetails = async (req, res) => {
       data: courseDetails,
     });
   } catch (e) {
-    console.log(e);
+    console.error("[student/courses] course details failed:", e.message || e);
     res.status(500).json({
       success: false,
       message: "Some error occured!",
@@ -111,7 +111,7 @@ const checkCoursePurchaseInfo = async (req, res) => {
       data: ifStudentAlreadyBoughtCurrentCourse,
     });
   } catch (e) {
-    console.log(e);
+    console.error("[student/courses] purchase-info check failed:", e.message || e);
     res.status(500).json({
       success: false,
       message: "Some error occured!",

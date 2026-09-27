@@ -3,31 +3,62 @@ const Order = require("../../models/Order");
 const Course = require("../../models/Course");
 const StudentCourses = require("../../models/StudentCourses");
 
+// paypal-rest-sdk is callback-based; wrap the two calls we need in promises.
+const createPayPalPayment = (json) =>
+  new Promise((resolve, reject) =>
+    paypal.payment.create(json, (error, payment) => (error ? reject(error) : resolve(payment)))
+  );
+
+const executePayPalPayment = (paymentId, payerId) =>
+  new Promise((resolve, reject) =>
+    paypal.payment.execute(paymentId, { payer_id: payerId }, (error, payment) =>
+      error ? reject(error) : resolve(payment)
+    )
+  );
+
+// Adds the course to the student's list only if it isn't already there, so a
+// replayed capture (a browser refresh on the return URL) can't duplicate it.
+async function enrollStudentOnce(userId, entry) {
+  const result = await StudentCourses.updateOne(
+    { userId, "courses.courseId": { $ne: entry.courseId } },
+    { $push: { courses: entry } }
+  );
+
+  // matchedCount 0 means either the student has no document yet, or they are
+  // already enrolled. Only the first case needs a new document.
+  if (result.matchedCount === 0) {
+    const existing = await StudentCourses.findOne({ userId });
+    if (!existing) await StudentCourses.create({ userId, courses: [entry] });
+  }
+}
+
 const createOrder = async (req, res) => {
   try {
     const {
       userId,
       userName,
       userEmail,
-      orderStatus,
       paymentMethod,
-      paymentStatus,
       orderDate,
-      paymentId,
-      payerId,
       instructorId,
       instructorName,
       courseImage,
       courseTitle,
       courseId,
-      coursePricing,
     } = req.body;
 
-    const create_payment_json = {
+    // Price comes from the database, never from the request body — otherwise a
+    // client can set its own price on the PayPal order.
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ success: false, message: "Course not found" });
+    }
+
+    const amount = parseFloat(course.pricing).toFixed(2);
+
+    const paymentInfo = await createPayPalPayment({
       intent: "sale",
-      payer: {
-        payment_method: "paypal",
-      },
+      payer: { payment_method: "paypal" },
       redirect_urls: {
         return_url: `${process.env.CLIENT_URL}/student/payment-return`,
         cancel_url: `${process.env.CLIENT_URL}/student/payment-cancel`,
@@ -37,69 +68,53 @@ const createOrder = async (req, res) => {
           item_list: {
             items: [
               {
-                name: courseTitle,
+                name: course.title,
                 sku: courseId,
-                price: parseFloat(coursePricing).toFixed(2),
+                price: amount,
                 currency: "INR",
                 quantity: 1,
               },
             ],
           },
-          amount: {
-            currency: "INR",
-            total: parseFloat(coursePricing).toFixed(2),
-          },
-          description: courseTitle,
+          amount: { currency: "INR", total: amount },
+          description: course.title,
         },
       ],
-    };
+    });
 
-    paypal.payment.create(create_payment_json, async (error, paymentInfo) => {
-      if (error) {
-        console.error("PayPal error:", JSON.stringify(error, null, 2));
-        return res.status(500).json({
-          success: false,
-          message: "Error while creating paypal payment!",
-        });
-      } else {
-        const newlyCreatedCourseOrder = new Order({
-          userId,
-          userName,
-          userEmail,
-          orderStatus,
-          paymentMethod,
-          paymentStatus,
-          orderDate,
-          paymentId,
-          payerId,
-          instructorId,
-          instructorName,
-          courseImage,
-          courseTitle,
-          courseId,
-          coursePricing,
-        });
+    // Status and paymentId are set here, not taken from the body, so the order
+    // starts pending and carries the PayPal id we later verify against.
+    const newlyCreatedCourseOrder = new Order({
+      userId,
+      userName,
+      userEmail,
+      orderStatus: "pending",
+      paymentMethod,
+      paymentStatus: "pending",
+      orderDate,
+      paymentId: paymentInfo.id,
+      payerId: null,
+      instructorId,
+      instructorName,
+      courseImage,
+      courseTitle: course.title,
+      courseId,
+      coursePricing: String(course.pricing),
+    });
 
-        await newlyCreatedCourseOrder.save();
+    await newlyCreatedCourseOrder.save();
 
-        const approveUrl = paymentInfo.links.find(
-          (link) => link.rel == "approval_url"
-        ).href;
+    const approveUrl = paymentInfo.links.find((link) => link.rel == "approval_url").href;
 
-        res.status(201).json({
-          success: true,
-          data: {
-            approveUrl,
-            orderId: newlyCreatedCourseOrder._id,
-          },
-        });
-      }
+    res.status(201).json({
+      success: true,
+      data: { approveUrl, orderId: newlyCreatedCourseOrder._id },
     });
   } catch (err) {
-    console.log(err);
+    console.error("Create order error:", err.message || err);
     res.status(500).json({
       success: false,
-      message: "Some error occured!",
+      message: "Error while creating paypal payment!",
     });
   }
 };
@@ -108,7 +123,14 @@ const capturePaymentAndFinalizeOrder = async (req, res) => {
   try {
     const { paymentId, payerId, orderId } = req.body;
 
-    let order = await Order.findById(orderId);
+    if (!paymentId || !payerId || !orderId) {
+      return res.status(400).json({
+        success: false,
+        message: "paymentId, payerId and orderId are required",
+      });
+    }
+
+    const order = await Order.findById(orderId);
 
     if (!order) {
       return res.status(404).json({
@@ -117,48 +139,71 @@ const capturePaymentAndFinalizeOrder = async (req, res) => {
       });
     }
 
+    // Replayed capture (refresh on the return URL): the order is already paid,
+    // so report success without charging or enrolling again.
+    if (order.orderStatus === "confirmed") {
+      return res.status(200).json({
+        success: true,
+        message: "Order already confirmed",
+        data: order,
+      });
+    }
+
+    // The payment must be the one this order created. Without this check any
+    // logged-in user could confirm someone else's order.
+    if (order.paymentId !== paymentId) {
+      return res.status(400).json({
+        success: false,
+        message: "Payment does not belong to this order",
+      });
+    }
+
+    // Ask PayPal to actually take the money. Until this succeeds the order is
+    // not paid, whatever the client claims.
+    let payment;
+    try {
+      payment = await executePayPalPayment(paymentId, payerId);
+    } catch (err) {
+      console.error("PayPal execute failed:", err.message || err);
+      return res.status(402).json({
+        success: false,
+        message: "Payment could not be confirmed with PayPal",
+      });
+    }
+
+    if (payment.state !== "approved") {
+      return res.status(402).json({
+        success: false,
+        message: `Payment not approved (state: ${payment.state})`,
+      });
+    }
+
+    // Guard against the approved amount differing from what we charged for.
+    const paidAmount = payment?.transactions?.[0]?.amount?.total;
+    const expectedAmount = parseFloat(order.coursePricing).toFixed(2);
+    if (paidAmount !== expectedAmount) {
+      console.error(`Amount mismatch on order ${orderId}: paid ${paidAmount}, expected ${expectedAmount}`);
+      return res.status(402).json({
+        success: false,
+        message: "Paid amount does not match the course price",
+      });
+    }
+
     order.paymentStatus = "paid";
     order.orderStatus = "confirmed";
-    order.paymentId = paymentId;
     order.payerId = payerId;
 
     await order.save();
 
-    //update out student course model
-    const studentCourses = await StudentCourses.findOne({
-      userId: order.userId,
+    await enrollStudentOnce(order.userId, {
+      courseId: order.courseId,
+      title: order.courseTitle,
+      instructorId: order.instructorId,
+      instructorName: order.instructorName,
+      dateOfPurchase: order.orderDate,
+      courseImage: order.courseImage,
     });
 
-    if (studentCourses) {
-      studentCourses.courses.push({
-        courseId: order.courseId,
-        title: order.courseTitle,
-        instructorId: order.instructorId,
-        instructorName: order.instructorName,
-        dateOfPurchase: order.orderDate,
-        courseImage: order.courseImage,
-      });
-
-      await studentCourses.save();
-    } else {
-      const newStudentCourses = new StudentCourses({
-        userId: order.userId,
-        courses: [
-          {
-            courseId: order.courseId,
-            title: order.courseTitle,
-            instructorId: order.instructorId,
-            instructorName: order.instructorName,
-            dateOfPurchase: order.orderDate,
-            courseImage: order.courseImage,
-          },
-        ],
-      });
-
-      await newStudentCourses.save();
-    }
-
-    //update the course schema students
     await Course.findByIdAndUpdate(order.courseId, {
       $addToSet: {
         students: {
@@ -176,7 +221,7 @@ const capturePaymentAndFinalizeOrder = async (req, res) => {
       data: order,
     });
   } catch (err) {
-    console.log(err);
+    console.error("Capture order error:", err.message || err);
     res.status(500).json({
       success: false,
       message: "Some error occured!",
@@ -184,7 +229,7 @@ const capturePaymentAndFinalizeOrder = async (req, res) => {
   }
 };
 
-// New function for free course enrollment
+// Free course enrollment — no payment, but the same duplicate guard applies.
 const enrollInFreeCourse = async (req, res) => {
   try {
     const {
@@ -198,7 +243,20 @@ const enrollInFreeCourse = async (req, res) => {
       courseId,
     } = req.body;
 
-    // Check if student already enrolled
+    // The course must actually be free, otherwise this route is a way around
+    // checkout entirely.
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ success: false, message: "Course not found" });
+    }
+
+    if (Number(course.pricing) > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "This course is paid — please use checkout",
+      });
+    }
+
     const existingEnrollment = await StudentCourses.findOne({
       userId: userId,
       "courses.courseId": courseId,
@@ -211,48 +269,22 @@ const enrollInFreeCourse = async (req, res) => {
       });
     }
 
-    // Update student courses model
-    const studentCourses = await StudentCourses.findOne({
-      userId: userId,
+    await enrollStudentOnce(userId, {
+      courseId: courseId,
+      title: courseTitle,
+      instructorId: instructorId,
+      instructorName: instructorName,
+      dateOfPurchase: new Date(),
+      courseImage: courseImage,
     });
 
-    if (studentCourses) {
-      studentCourses.courses.push({
-        courseId: courseId,
-        title: courseTitle,
-        instructorId: instructorId,
-        instructorName: instructorName,
-        dateOfPurchase: new Date(),
-        courseImage: courseImage,
-      });
-
-      await studentCourses.save();
-    } else {
-      const newStudentCourses = new StudentCourses({
-        userId: userId,
-        courses: [
-          {
-            courseId: courseId,
-            title: courseTitle,
-            instructorId: instructorId,
-            instructorName: instructorName,
-            dateOfPurchase: new Date(),
-            courseImage: courseImage,
-          },
-        ],
-      });
-
-      await newStudentCourses.save();
-    }
-
-    // Update the course schema students
     await Course.findByIdAndUpdate(courseId, {
       $addToSet: {
         students: {
           studentId: userId,
           studentName: userName,
           studentEmail: userEmail,
-          paidAmount: 0, // Free course
+          paidAmount: 0,
         },
       },
     });
@@ -260,13 +292,10 @@ const enrollInFreeCourse = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Successfully enrolled in free course!",
-      data: {
-        courseId: courseId,
-        enrolled: true,
-      },
+      data: { courseId: courseId, enrolled: true },
     });
   } catch (err) {
-    console.log(err);
+    console.error("Free enroll error:", err.message || err);
     res.status(500).json({
       success: false,
       message: "Some error occurred while enrolling in free course!",

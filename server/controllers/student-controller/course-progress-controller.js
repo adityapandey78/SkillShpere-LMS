@@ -66,7 +66,7 @@ const markCurrentLectureAsViewed = async (req, res) => {
       data: progress,
     });
   } catch (error) {
-    console.log(error);
+    console.error("[progress] mark lecture viewed failed:", error.message || error);
     res.status(500).json({
       success: false,
       message: "Some error occured!",
@@ -137,7 +137,7 @@ const getCurrentCourseProgress = async (req, res) => {
       },
     });
   } catch (error) {
-    console.log(error);
+    console.error("[progress] get current progress failed:", error.message || error);
     res.status(500).json({
       success: false,
       message: "Some error occured!",
@@ -172,7 +172,7 @@ const resetCurrentCourseProgress = async (req, res) => {
       data: progress,
     });
   } catch (error) {
-    console.log(error);
+    console.error("[progress] reset progress failed:", error.message || error);
     res.status(500).json({
       success: false,
       message: "Some error occured!",
@@ -192,7 +192,7 @@ const updateLectureDuration = async (req, res) => {
     );
     res.status(200).json({ success: true });
   } catch (error) {
-    console.log(error);
+    console.error("[progress] update lecture duration failed:", error.message || error);
     res.status(500).json({ success: false, message: "Some error occured!" });
   }
 };
